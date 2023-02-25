@@ -1,3 +1,10 @@
+DROP PROCEDURE IF EXISTS enter_fight;
+DROP TRIGGER IF EXISTS trg_fight_insert;
+DROP TABLE IF EXISTS fighting_status;
+DROP TABLE IF EXISTS team;
+DROP TABLE IF EXISTS owns;
+DROP TABLE IF EXISTS trainer;
+
 DROP VIEW IF EXISTS pokemon_view;
 DROP TRIGGER IF EXISTS pkm_randomizer;
 DROP TABLE IF EXISTS pokemon;
@@ -33,7 +40,7 @@ CREATE TABLE movepool (
     catagolry VARCHAR(8),
     -- NULL if is pure status move
     -- 0 ~ 200?
-    atk TINYINT,
+    movepower TINYINT,
     -- 0 ~ 100
     accuracy TINYINT,
     -- additional effect, NULL if is pure atk move
@@ -81,7 +88,7 @@ CREATE TABLE nature_table (
 );
 
 CREATE TABLE pokemon (
-    pkm_id INTEGER AUTO_INCREMENT,
+    pkm_id INTEGER NOT NULL AUTO_INCREMENT,
     pkdex SMALLINT,
     -- default 50, not planning to design exp system
     lv TINYINT DEFAULT 50,
@@ -139,6 +146,7 @@ CREATE VIEW pokemon_view AS
     SELECT pkm_id, 
         pkm_name,
         nature,
+        lv,
         FLOOR((2*strength_hp + IV_hp + FLOOR(EV_hp/4))*lv/100)+lv+10 AS hp, 
         FLOOR( (FLOOR((2*strength_atk + IV_atk + FLOOR(EV_atk/4))*lv/100)+5)*nature_atk ) AS atk, 
         FLOOR( (FLOOR((2*strength_def + IV_def + FLOOR(EV_def/4))*lv/100)+5)*nature_def ) AS def,
@@ -148,47 +156,141 @@ CREATE VIEW pokemon_view AS
     FROM pokemon, pokedex, nature_table;
 
 
-/* CREATE TABLE trainer (
-    trainer_id,
-    name,
-    password
-)
+CREATE TABLE trainer (
+    trainer_id      INTEGER NOT NULL AUTO_INCREMENT,
+    trainer_name    VARCHAR(20) NOT NULL,
+    password        VARCHAR(20) NOT NULL,
+    PRIMARY KEY (trainer_id)
+);
 
 CREATE TABLE owns (
-    trainer_id,
-    pkm_id
-)
+    trainer_id INTEGER NOT NULL,
+    pkm_id     INTEGER NOT NULL UNIQUE,
+    PRIMARY KEY (trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id) REFERENCES trainer(trainer_id),
+    FOREIGN KEY (pkm_id)     REFERENCES pokemon(pkm_id)
+);
 
 CREATE TABLE team (
-    trainer_id,
-    pkm_id_1,
-    pkm_id_2,
-    pkm_id_3,
-    pkm_id_4,
-    pkm_id_5,
-    pkm_id_6,
-) */
+    trainer_id  INTEGER NOT NULL UNIQUE,
+    pkm_id_1    INTEGER NOT NULL,
+    pkm_id_2    INTEGER,
+    pkm_id_3    INTEGER,
+    pkm_id_4    INTEGER,
+    pkm_id_5    INTEGER,
+    pkm_id_6    INTEGER,
+    PRIMARY KEY (trainer_id),
+    FOREIGN KEY (trainer_id, pkm_id_1) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_2) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_3) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_4) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_5) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_6) REFERENCES owns(trainer_id, pkm_id)
+);
 
 -- It should be created when a battle degins,
 -- and delete when battle ends
 -- totally 12 rows
-/* CREATE TABLE fighting_status (
-    trainer_id,
-    pkm_id,
-    hp,
-    -- health, poison, paralyzed, ...
-    status,
-    sp_status, -- confuse, attracted, ...
+CREATE TABLE fighting_status (
+    trainer_id INTEGER NOT NULL,
+    pkm_id     INTEGER NOT NULL UNIQUE,
+    -- The first pokemon set to 1
+    choosen    TINYINT DEFAULT 0, 
+    hp         INTEGER,
+    max_hp     INTEGER,
+    -- health (NULL), burn, Freeze, Paralysis, Poison, Badly poisoned, sleep
+    status     VARCHAR(20) DEFAULT NULL,
+    -- Badly poisoned 
+        -- -n/16 hp very turn, reset when switch
+    -- Sleep
+        -- 2~5 turn (countdown), reset when switch
+    status_count INTEGER DEFAULT NULL,
+    sp_status   VARCHAR(20) DEFAULT NULL, -- confuse, attracted, ...
     -- -6 ~ +6
-    atk,
-    def,
-    satk,
-    sdef,
-    spd,
-    acc,
-    evasion
-) */
+    atk         TINYINT DEFAULT 0,
+    def         TINYINT DEFAULT 0,
+    satk        TINYINT DEFAULT 0,
+    sdef        TINYINT DEFAULT 0,
+    spd         TINYINT DEFAULT 0,
+    acc         TINYINT DEFAULT 0,
+    evasion     TINYINT DEFAULT 0
+);
 
+-- handler when entering a fight
+DELIMITER !
+-- import pkm hp
+CREATE TRIGGER trg_fight_insert BEFORE INSERT
+    ON fighting_status FOR EACH ROW
+BEGIN
+    DECLARE pkm_hp INTEGER;
+    DECLARE hi INTEGER;
+
+    IF ISNULL(NEW.pkm_id) THEN
+        -- if pkm_id is null, data will be ignored
+        SET NEW.pkm_id=NULL;
+    ELSE
+        SELECT hp INTO pkm_hp
+            FROM pokemon_view
+            WHERE pkm_id=NEW.pkm_id;
+
+        SET NEW.hp = pkm_hp;
+        SET NEW.max_hp = pkm_hp;
+    END IF;
+END !
+
+-- procedure that executed when two trainer enter fight
+CREATE PROCEDURE enter_fight (
+    trainer_id_1 INTEGER,
+    trainer_id_2 INTEGER
+)
+BEGIN
+    DECLARE tmp_pkm_id_1 INTEGER;
+    DECLARE tmp_pkm_id_2 INTEGER;
+    DECLARE tmp_pkm_id_3 INTEGER;
+    DECLARE tmp_pkm_id_4 INTEGER;
+    DECLARE tmp_pkm_id_5 INTEGER;
+    DECLARE tmp_pkm_id_6 INTEGER;
+    DECLARE tmp_trainer_id INTEGER;
+    DECLARE train_count INTEGER DEFAULT 0;
+
+    DELETE FROM fighting_status;
+
+    WHILE train_count < 2 DO
+        SET train_count = train_count + 1;
+        IF train_count=1 THEN
+            SET tmp_trainer_id = trainer_id_1;
+        ELSE
+            SET tmp_trainer_id = trainer_id_2;
+        END IF;
+
+        SELECT 
+            pkm_id_1,
+            pkm_id_2,
+            pkm_id_3,
+            pkm_id_4,
+            pkm_id_5,
+            pkm_id_6
+        INTO 
+            tmp_pkm_id_1,
+            tmp_pkm_id_2,
+            tmp_pkm_id_3,
+            tmp_pkm_id_4,
+            tmp_pkm_id_5,
+            tmp_pkm_id_6
+        FROM team
+        WHERE trainer_id=tmp_trainer_id;
+
+        INSERT IGNORE INTO fighting_status (trainer_id, pkm_id, choosen) VALUES
+            (tmp_trainer_id, tmp_pkm_id_1, 1),
+            (tmp_trainer_id, tmp_pkm_id_2, 0),
+            (tmp_trainer_id, tmp_pkm_id_3, 0),
+            (tmp_trainer_id, tmp_pkm_id_4, 0),
+            (tmp_trainer_id, tmp_pkm_id_5, 0),
+            (tmp_trainer_id, tmp_pkm_id_6, 0);
+    END WHILE;
+END !
+
+DELIMITER ;
 /* procedure fight
 check_speed()
 attack_first()

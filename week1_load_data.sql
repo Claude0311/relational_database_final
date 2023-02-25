@@ -10,6 +10,15 @@ INSERT INTO movepool VALUES
     (86, 'Thunder Wave', 'electric', 20, 0, 'status', NULL, 90, 100, 'paralysis', 1, 1, 1),
     (435, 'Discharge', 'electric', 15, 0, 'special', 80, 120, 30, 'paralysis', 1, 1, 1);
 
+DELETE FROM type_chart;
+INSERT INTO type_chart VALUES
+    ('water', 'electric', 1.0),
+    ('electric', 'water', 2.0),
+    ('electric', 'electric', 0.5),
+    ('water', 'water', 0.5),
+    ('ice', 'water', 0.5),
+    ('ice', 'electric', 1.0);
+
 INSERT INTO know VALUES
     (171, 56),
     (171, 58),
@@ -19,3 +28,17 @@ INSERT INTO know VALUES
 INSERT INTO pokemon (pkdex, nature_id, mv_id_1, mv_id_2) VALUES
     (171, 15, 56, 86),
     (171, 15, 58, 435);
+
+INSERT INTO trainer VALUES
+    (1, 'Jeff', 'jeff123'),
+    (2, 'Joshua', 'josh321');
+
+INSERT INTO owns VALUES 
+    (1, 1),
+    (2, 2);
+
+INSERT INTO team (trainer_id, pkm_id_1) VALUES
+    (1, 1),
+    (2, 2);
+
+CALL enter_fight(1,2);
