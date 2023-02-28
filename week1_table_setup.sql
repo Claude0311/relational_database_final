@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS fighting_status;
 DROP TABLE IF EXISTS team;
 DROP TABLE IF EXISTS owns;
 DROP TABLE IF EXISTS trainer;
-
+DROP TABLE IF EXISTS fight_log;
 DROP VIEW IF EXISTS pokemon_view;
 DROP TRIGGER IF EXISTS pkm_randomizer;
 DROP TABLE IF EXISTS pokemon;
@@ -28,6 +28,7 @@ CREATE TABLE pokedex (
     strength_spd TINYINT,
     PRIMARY KEY (pkdex)
 );
+CREATE INDEX ind_pkdex ON pokedex(pkdex);
 
 CREATE TABLE movepool (
     mv_id INTEGER AUTO_INCREMENT,
@@ -37,7 +38,7 @@ CREATE TABLE movepool (
     -- -5 ~ +5
     priority TINYINT DEFAULT 0,
     -- physical, special, status
-    catagolry VARCHAR(8),
+    category VARCHAR(8),
     -- NULL if is pure status move
     -- 0 ~ 200?
     movepower TINYINT,
@@ -56,6 +57,7 @@ CREATE TABLE movepool (
     max_times TINYINT NOT NULL DEFAULT 1,
     PRIMARY KEY (mv_id)
 );
+CREATE INDEX ind_mvid ON movepool(mv_id);
 -- not supporting:
 -- demage itself, heal itself, field, mist, constant damage(dragon rage)
 -- Metronome, One-Hit-KO
@@ -122,6 +124,7 @@ CREATE TABLE pokemon (
     CHECK ( EV_hp+EV_atk+EV_def+EV_spatk+EV_spdef+EV_spd <= 510 ),
     CHECK ( EV_hp <= 252 AND EV_atk <= 252 AND EV_def<=252 AND EV_spatk<=252 AND EV_spdef<=252 AND EV_spd<=252 )
 );
+CREATE INDEX ind_pkm ON pokemon(pkm_id);
 
 DELIMITER !
 CREATE TRIGGER pkm_randomizer
@@ -162,6 +165,7 @@ CREATE TABLE trainer (
     password        VARCHAR(20) NOT NULL,
     PRIMARY KEY (trainer_id)
 );
+CREATE INDEX ind_trainer ON trainer(trainer_id);
 
 CREATE TABLE owns (
     trainer_id INTEGER NOT NULL,
@@ -209,8 +213,8 @@ CREATE TABLE fighting_status (
     -- -6 ~ +6
     atk         TINYINT DEFAULT 0,
     def         TINYINT DEFAULT 0,
-    satk        TINYINT DEFAULT 0,
-    sdef        TINYINT DEFAULT 0,
+    spatk        TINYINT DEFAULT 0,
+    spdef        TINYINT DEFAULT 0,
     spd         TINYINT DEFAULT 0,
     acc         TINYINT DEFAULT 0,
     evasion     TINYINT DEFAULT 0
@@ -254,6 +258,7 @@ BEGIN
     DECLARE train_count INTEGER DEFAULT 0;
 
     DELETE FROM fighting_status;
+    DELETE FROM fight_log;
 
     WHILE train_count < 2 DO
         SET train_count = train_count + 1;
@@ -291,6 +296,13 @@ BEGIN
 END !
 
 DELIMITER ;
+
+CREATE TABLE fight_log (
+    msg VARCHAR(100) NOT NULL
+);
+
+
+
 /* procedure fight
 check_speed()
 attack_first()
