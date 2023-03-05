@@ -45,22 +45,17 @@ END $$
 -- deal additional effect
 CREATE procedure deal_effect (
     move_effect VARCHAR(20),
-    target_id INTEGER
+    target_id INTEGER,
+    target_name VARCHAR(50)
 )
 BEGIN
     DECLARE target_cur_status VARCHAR(20);
     DECLARE inc TINYINT;
-    DECLARE target_name VARCHAR(20);
     DECLARE handle_badpoison TINYINT;
 
     SELECT status INTO target_cur_status
         FROM fighting_status
         WHERE pkm_id=target_id;
-    
-    SELECT pkm_name INTO target_name
-        FROM pokemon, pokedex
-        WHERE pkm_id=target_id;
-    INSERT INTO fight_log VALUES ();
 
     SET handle_badpoison = (target_cur_status='poison' AND move_effect in ('poison', 'badly poison')) OR move_effect = 'badly poisoned';
 
@@ -86,7 +81,7 @@ BEGIN
         END IF;
 
         INSERT INTO fight_log VALUES
-            (CONCAT(target_name, '_', target_id, describe_effect(move_effect)));
+            (CONCAT(target_name, describe_effect(move_effect)));
     END IF;
     
     IF move_effect LIKE '% %' THEN
@@ -101,7 +96,7 @@ BEGIN
             evasion = IF( move_effect LIKE 'evasion%',  LEAST( GREATEST(-6, evasion + inc), 6 ),  evasion)
             WHERE pkm_id=target_id;
         INSERT INTO fight_log VALUES
-            (CONCAT(target_name, '_', target_id, describe_effect(move_effect)));
+            (CONCAT(target_name, describe_effect(move_effect)));
     END IF;
 END $$
 
@@ -109,37 +104,32 @@ CREATE procedure use_move (
     IN atk_id INTEGER,
     IN def_id INTEGER,
     IN move_id INTEGER,
+    IN atker_name VARCHAR(50),
+    IN defer_name VARCHAR(50),
     OUT fainted TINYINT
 ) NOT DETERMINISTIC
 um: BEGIN
     DECLARE cur_category VARCHAR(8);
     DECLARE damage INTEGER;
     DECLARE effectiveness FLOAT;
-    DECLARE attacker_name VARCHAR(20);
-    DECLARE defenser_name VARCHAR(20);
     DECLARE cur_mv_name VARCHAR(20);
     DECLARE move_target TINYINT;
     DECLARE move_effect VARCHAR(20);
     DECLARE effect_prob TINYINT;
     DECLARE target_id INTEGER;
+    DECLARE target_name VARCHAR(50);
 
-    SET fainted = 0;
+    SET fainted=0;
 
     SELECT category, move_name, effect_target, effect, prob
     INTO cur_category, cur_mv_name, move_target, move_effect, effect_prob
         FROM movepool
         WHERE mv_id=move_id;
 
-    SELECT pkm_name INTO attacker_name
-        FROM pokemon, pokedex
-        WHERE pkm_id=atk_id;
-
-    SELECT pkm_name INTO defenser_name
-        FROM pokemon, pokedex
-        WHERE pkm_id=def_id;
-
     INSERT INTO fight_log VALUES
-        (CONCAT(attacker_name, '_', atk_id, ' use ', cur_mv_name));
+        (CONCAT(atker_name, ' use ', cur_mv_name));
+
+    -- Check miss
     
     IF cur_category!='status' THEN
         -- effectiveness check
@@ -159,14 +149,12 @@ um: BEGIN
             WHERE pkm_id=def_id;
 
         -- check fainted
-        SELECT hp INTO fainted
+        SELECT hp=0 INTO fainted
             FROM fighting_status
             WHERE pkm_id=def_id;
-        IF fainted=0 THEN
-            SET fainted = 1;
+        IF fainted=1 THEN
             INSERT INTO fight_log VALUES
-                (CONCAT(defenser_name, 'fainted!'));
-        ELSE SET fainted = 0; 
+                (CONCAT(defer_name, ' fainted!'));
         END IF;
     END IF;
 
@@ -174,8 +162,9 @@ um: BEGIN
         -- additional effect triggered
         -- set addition effect's target
         SET target_id = IF(move_target=1, def_id, atk_id);
+        SET target_name = IF(move_target=1, defer_name, atker_name);
 
-        CALL deal_effect(move_effect, target_id);
+        CALL deal_effect(move_effect, target_id, target_name);
 
     END IF;
 
@@ -183,10 +172,10 @@ END $$
 
 DELIMITER ;
 
-CALL enter_fight(1,2);
+/* CALL enter_fight(1,2);
 CALL use_move(1, 2, 56, @f);
 CALL use_move(2, 1, 58, @f);
 CALL use_move(1, 2, 86, @f);
 CALL use_move(2, 1, 435, @f);
 SELECT * FROM fight_log;
-SELECT * FROM fighting_status;
+SELECT * FROM fighting_status; */

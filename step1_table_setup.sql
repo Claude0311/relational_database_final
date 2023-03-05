@@ -298,7 +298,7 @@ END !
 DELIMITER ;
 
 CREATE TABLE fight_log (
-    msg VARCHAR(100) NOT NULL
+    msg VARCHAR(100)
 );
 
 
