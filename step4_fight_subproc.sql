@@ -57,7 +57,7 @@ BEGIN
         FROM fighting_status
         WHERE pkm_id=target_id;
 
-    SET handle_badpoison = (target_cur_status='poison' AND move_effect in ('poison', 'badly poison')) OR move_effect = 'badly poisoned';
+    SET handle_badpoison = (target_cur_status='poison' AND move_effect in ('poison', 'badly poison')) OR move_effect = 'badly poison';
 
     IF (ISNULL(target_cur_status) AND move_effect in ('burn', 'freeze', 'paralysis', 'poison', 'sleep')) OR handle_badpoison THEN
         IF handle_badpoison THEN

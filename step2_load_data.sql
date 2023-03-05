@@ -8,7 +8,8 @@ INSERT INTO movepool VALUES
     (56, 'Hydro Pump', 'water', 5, 0, 'special', 120, 80, NULL, NULL, NULL, 1, 1),
     (58, 'Ice Beam', 'ice', 10, 0, 'special', 90, 100, 10, 'freeze', 1, 1, 1),
     (86, 'Thunder Wave', 'electric', 20, 0, 'status', NULL, 90, 100, 'paralysis', 1, 1, 1),
-    (435, 'Discharge', 'electric', 15, 0, 'special', 80, 120, 30, 'paralysis', 1, 1, 1);
+    (435, 'Discharge', 'electric', 15, 0, 'special', 80, 120, 30, 'paralysis', 1, 1, 1),
+    (92, 'Toxic', 'poison', 10, 0, 'status', NULL, 90, 100, 'badly poison', 1, 1, 1);
 
 DELETE FROM type_chart;
 INSERT INTO type_chart VALUES
@@ -20,14 +21,15 @@ INSERT INTO type_chart VALUES
     ('ice', 'electric', 1.0);
 
 INSERT INTO know VALUES
+    (171, 92),
     (171, 56),
     (171, 58),
     (171, 86),
     (171, 435);
 
-INSERT INTO pokemon (pkdex, nature_id, mv_id_1, mv_id_2) VALUES
-    (171, 15, 56, 86),
-    (171, 15, 58, 435);
+INSERT INTO pokemon (pkdex, nature_id, mv_id_1, mv_id_2, mv_id_3) VALUES
+    (171, 15, 56, 86, 92),
+    (171, 15, 58, 435, 92);
 
 INSERT INTO trainer VALUES
     (1, 'Jeff', 'jeff123'),
