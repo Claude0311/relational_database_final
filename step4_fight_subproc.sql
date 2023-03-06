@@ -1,9 +1,19 @@
+DROP PROCEDURE IF EXISTS log_to_fight;
 DROP procedure IF EXISTS use_move;
 DROP procedure IF EXISTS deal_effect;
 DROP FUNCTION IF EXISTS describe_effect;
 
 DELIMITER $$
--- help logger
+-- logger function
+CREATE PROCEDURE log_to_fight (
+    val VARCHAR(100)
+)
+BEGIN 
+    INSERT INTO fight_log (msg) VALUES
+        (val);
+END $$
+
+-- effect logger
 CREATE FUNCTION describe_effect (
     move_effect VARCHAR(20)
 ) RETURNS VARCHAR(40)
@@ -57,7 +67,7 @@ BEGIN
         FROM fighting_status
         WHERE pkm_id=target_id;
 
-    SET handle_badpoison = (target_cur_status='poison' AND move_effect in ('poison', 'badly poison')) OR move_effect = 'badly poison';
+    SET handle_badpoison = (target_cur_status='poison' AND move_effect in ('poison', 'badly poison')) OR (ISNULL(target_cur_status) AND move_effect = 'badly poison');
 
     IF (ISNULL(target_cur_status) AND move_effect in ('burn', 'freeze', 'paralysis', 'poison', 'sleep')) OR handle_badpoison THEN
         IF handle_badpoison THEN
@@ -80,11 +90,11 @@ BEGIN
                 WHERE pkm_id=target_id;
         END IF;
 
-        INSERT INTO fight_log VALUES
-            (CONCAT(target_name, describe_effect(move_effect)));
+        CALL log_to_fight(CONCAT(target_name, describe_effect(move_effect)));
+
     END IF;
     
-    IF move_effect LIKE '% %' THEN
+    IF move_effect LIKE '% +%' OR move_effect LIKE '% -%' THEN
         SET inc = cast(substring_index(move_effect,' ',-1) AS SIGNED );
         UPDATE fighting_status SET
             atk     = IF( move_effect LIKE 'atk%',      LEAST( GREATEST(-6, atk + inc), 6 ),      atk),
@@ -95,8 +105,8 @@ BEGIN
             acc     = IF( move_effect LIKE 'acc%',      LEAST( GREATEST(-6, acc + inc), 6 ),      acc),
             evasion = IF( move_effect LIKE 'evasion%',  LEAST( GREATEST(-6, evasion + inc), 6 ),  evasion)
             WHERE pkm_id=target_id;
-        INSERT INTO fight_log VALUES
-            (CONCAT(target_name, describe_effect(move_effect)));
+
+        CALL log_to_fight(CONCAT(target_name, describe_effect(move_effect)));
     END IF;
 END $$
 
@@ -126,8 +136,7 @@ um: BEGIN
         FROM movepool
         WHERE mv_id=move_id;
 
-    INSERT INTO fight_log VALUES
-        (CONCAT(atker_name, ' use ', cur_mv_name));
+    CALL log_to_fight(CONCAT(atker_name, ' use ', cur_mv_name));
 
     -- Check miss
     
@@ -135,11 +144,11 @@ um: BEGIN
         -- effectiveness check
         SET effectiveness = move_effectiveness(NULL, def_id, move_id);
         IF effectiveness = 0.0 THEN
-            INSERT INTO fight_log VALUES ('But, it failed!');
+            CALL log_to_fight('But, it failed!');
         ELSEIF effectiveness < 1.0 THEN
-            INSERT INTO fight_log VALUES ('It\'s not very effective...');
+            CALL log_to_fight('It\'s not very effective...');
         ELSEIF effectiveness > 1.0 THEN
-            INSERT INTO fight_log VALUES ('It\'s super effective!');
+            CALL log_to_fight('It\'s super effective!');
         END IF;
 
         -- deal damage
@@ -153,8 +162,7 @@ um: BEGIN
             FROM fighting_status
             WHERE pkm_id=def_id;
         IF fainted=1 THEN
-            INSERT INTO fight_log VALUES
-                (CONCAT(defer_name, ' fainted!'));
+            CALL log_to_fight(CONCAT(defer_name, ' fainted!'));
         END IF;
     END IF;
 

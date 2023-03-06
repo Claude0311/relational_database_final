@@ -1,4 +1,4 @@
-DROP PROCEDURE IF EXISTS enter_fight;
+
 DROP TRIGGER IF EXISTS trg_fight_insert;
 DROP TABLE IF EXISTS fighting_status;
 DROP TABLE IF EXISTS team;
@@ -241,64 +241,13 @@ BEGIN
         SET NEW.max_hp = pkm_hp;
     END IF;
 END !
-
--- procedure that executed when two trainer enter fight
-CREATE PROCEDURE enter_fight (
-    trainer_id_1 INTEGER,
-    trainer_id_2 INTEGER
-)
-BEGIN
-    DECLARE tmp_pkm_id_1 INTEGER;
-    DECLARE tmp_pkm_id_2 INTEGER;
-    DECLARE tmp_pkm_id_3 INTEGER;
-    DECLARE tmp_pkm_id_4 INTEGER;
-    DECLARE tmp_pkm_id_5 INTEGER;
-    DECLARE tmp_pkm_id_6 INTEGER;
-    DECLARE tmp_trainer_id INTEGER;
-    DECLARE train_count INTEGER DEFAULT 0;
-
-    DELETE FROM fighting_status;
-    DELETE FROM fight_log;
-
-    WHILE train_count < 2 DO
-        SET train_count = train_count + 1;
-        IF train_count=1 THEN
-            SET tmp_trainer_id = trainer_id_1;
-        ELSE
-            SET tmp_trainer_id = trainer_id_2;
-        END IF;
-
-        SELECT 
-            pkm_id_1,
-            pkm_id_2,
-            pkm_id_3,
-            pkm_id_4,
-            pkm_id_5,
-            pkm_id_6
-        INTO 
-            tmp_pkm_id_1,
-            tmp_pkm_id_2,
-            tmp_pkm_id_3,
-            tmp_pkm_id_4,
-            tmp_pkm_id_5,
-            tmp_pkm_id_6
-        FROM team
-        WHERE trainer_id=tmp_trainer_id;
-
-        INSERT IGNORE INTO fighting_status (trainer_id, pkm_id, choosen) VALUES
-            (tmp_trainer_id, tmp_pkm_id_1, 1),
-            (tmp_trainer_id, tmp_pkm_id_2, 0),
-            (tmp_trainer_id, tmp_pkm_id_3, 0),
-            (tmp_trainer_id, tmp_pkm_id_4, 0),
-            (tmp_trainer_id, tmp_pkm_id_5, 0),
-            (tmp_trainer_id, tmp_pkm_id_6, 0);
-    END WHILE;
-END !
-
 DELIMITER ;
 
 CREATE TABLE fight_log (
-    msg VARCHAR(100)
+    msg_ind INTEGER AUTO_INCREMENT,
+    msg VARCHAR(100),
+    isnew TINYINT DEFAULT 1,
+    PRIMARY KEY (msg_ind)
 );
 
 

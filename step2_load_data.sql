@@ -27,9 +27,11 @@ INSERT INTO know VALUES
     (171, 86),
     (171, 435);
 
-INSERT INTO pokemon (pkdex, nature_id, mv_id_1, mv_id_2, mv_id_3) VALUES
-    (171, 15, 56, 86, 92),
-    (171, 15, 58, 435, 92);
+INSERT INTO pokemon (pkdex, nature_id, mv_id_1, mv_id_2) VALUES
+    (171, 15, 56, 86),
+    (171, 15, 58, 435),
+    (171, 15, 86, 92),
+    (171, 15, 56, 92);
 
 INSERT INTO trainer VALUES
     (1, 'Jeff', 'jeff123'),
@@ -37,10 +39,10 @@ INSERT INTO trainer VALUES
 
 INSERT INTO owns VALUES 
     (1, 1),
-    (2, 2);
+    (2, 2),
+    (1, 3),
+    (2, 4);
 
-INSERT INTO team (trainer_id, pkm_id_1) VALUES
-    (1, 1),
-    (2, 2);
-
-CALL enter_fight(1,2);
+INSERT INTO team (trainer_id, pkm_id_1, pkm_id_2) VALUES
+    (1, 1, 3),
+    (2, 2, 4);
