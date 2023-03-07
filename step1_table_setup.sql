@@ -28,7 +28,6 @@ CREATE TABLE pokedex (
     strength_spd TINYINT,
     PRIMARY KEY (pkdex)
 );
-CREATE INDEX ind_pkdex ON pokedex(pkdex);
 
 CREATE TABLE movepool (
     mv_id INTEGER AUTO_INCREMENT,
@@ -57,7 +56,6 @@ CREATE TABLE movepool (
     max_times TINYINT NOT NULL DEFAULT 1,
     PRIMARY KEY (mv_id)
 );
-CREATE INDEX ind_mvid ON movepool(mv_id);
 -- not supporting:
 -- demage itself, heal itself, field, mist, constant damage(dragon rage)
 -- Metronome, One-Hit-KO
@@ -90,7 +88,7 @@ CREATE TABLE nature_table (
 );
 
 CREATE TABLE pokemon (
-    pkm_id INTEGER NOT NULL AUTO_INCREMENT,
+    pkm_id INTEGER AUTO_INCREMENT,
     pkdex SMALLINT,
     -- default 50, not planning to design exp system
     lv TINYINT DEFAULT 50,
@@ -124,7 +122,6 @@ CREATE TABLE pokemon (
     CHECK ( EV_hp+EV_atk+EV_def+EV_spatk+EV_spdef+EV_spd <= 510 ),
     CHECK ( EV_hp <= 252 AND EV_atk <= 252 AND EV_def<=252 AND EV_spatk<=252 AND EV_spdef<=252 AND EV_spd<=252 )
 );
-CREATE INDEX ind_pkm ON pokemon(pkm_id);
 
 DELIMITER !
 CREATE TRIGGER pkm_randomizer
@@ -161,11 +158,10 @@ CREATE VIEW pokemon_view AS
 
 CREATE TABLE trainer (
     trainer_id      INTEGER NOT NULL AUTO_INCREMENT,
-    trainer_name    VARCHAR(20) NOT NULL,
+    trainer_name    VARCHAR(20) NOT NULL UNIQUE,
     password        VARCHAR(20) NOT NULL,
     PRIMARY KEY (trainer_id)
 );
-CREATE INDEX ind_trainer ON trainer(trainer_id);
 
 CREATE TABLE owns (
     trainer_id INTEGER NOT NULL,

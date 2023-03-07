@@ -180,7 +180,9 @@ CREATE PROCEDURE one_turn(
     -- 0: tie
     -- 1: player 1 win
     -- 2: player 2 win
-    OUT winner TINYINT
+    OUT winner TINYINT,
+    OUT pkm_1_fainted TINYINT,
+    OUT pkm_2_fainted TINYINT
 ) NOT DETERMINISTIC
 -- check surrender (mv_id and switch are NULL)
 -- switch pkm
@@ -207,9 +209,11 @@ ot: BEGIN
     DECLARE pkm_1_status_count INTEGER;
     DECLARE pkm_2_status_count INTEGER;
     DECLARE pkm_1_goes_first TINYINT DEFAULT 1;
-    DECLARE pkm_1_fainted TINYINT DEFAULT 0;
-    DECLARE pkm_2_fainted TINYINT DEFAULT 0;
+    /* DECLARE pkm_1_fainted TINYINT DEFAULT 0;
+    DECLARE pkm_2_fainted TINYINT DEFAULT 0; */
     
+    SET pkm_1_fainted = 0;
+    SET pkm_2_fainted = 0;
     UPDATE fight_log SET isnew=0;
     SET winner = NULL;
 
