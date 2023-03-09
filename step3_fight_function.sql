@@ -1,6 +1,7 @@
 DROP FUNCTION IF EXISTS calculate_damage;
 DROP FUNCTION IF EXISTS move_effectiveness;
 DROP FUNCTION IF EXISTS stat_change;
+DROP FUNCTION IF EXISTS is_hit;
 
 DELIMITER !
 -- given stat from fight_status, calculate factor
@@ -134,8 +135,61 @@ BEGIN
     RETURN damage;
 END !
 
-DELIMITER ;
+-- Given pokemons and move, determines if move hits
+CREATE FUNCTION is_hit (
+    atk_id INTEGER,
+    def_id INTEGER,
+    move_id INTEGER
+) RETURNS TINYINT NOT DETERMINISTIC
+BEGIN
+    DECLARE factor FLOAT default 1;
+    DECLARE atk_acc FLOAT default 0;
+    DECLARE def_eva FLOAT default 0;
+    DECLARE mov_acc FLOAT default 0;
+    DECLARE A FLOAT default 0;
+    DECLARE B FLOAT default 0;
 
+    -- Load accuracy for attacking pokemon
+    SELECT acc INTO atk_acc
+            FROM fighting_status
+            WHERE pkm_id=atk_id;
+    
+    -- Load evasion for defending pokemon
+    SELECT evasion INTO def_eva
+            FROM fighting_status
+            WHERE pkm_id=def_id;
+    
+    -- Load accuracy for move
+    SELECT accuracy INTO mov_acc
+            FROM movepool
+            WHERE mv_id=move_id;
+    
+    SET factor = atk_acc - def_eva;
+
+    IF factor > 6 THEN
+        SET factor = 6;
+    ELSEIF factor < -6 THEN
+        SET factor =-6;
+    END IF;
+
+    IF factor >= 0 THEN
+        SET factor = (3+factor)/3;
+    ELSE
+        SET factor = 3/(3+factor);
+    END IF;
+
+    SET A = FLOOR(255*mov_acc)*factor/255;
+    -- Generate random value to determine if hits
+    SET B = FLOOR(RAND()*100);
+
+    IF B<A THEN
+        RETURN 1;
+    ELSE
+        RETURN 0;
+    END IF;
+END !
+
+DELIMITER ;
 -- TEST
 /* SELECT calculate_damage(1, 2, 56) AS Hydro_Pump,
 calculate_damage(1, 2, 58) AS Ice_Beam,
