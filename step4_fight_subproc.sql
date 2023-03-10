@@ -18,7 +18,7 @@ CREATE FUNCTION describe_effect (
     move_effect VARCHAR(20)
 ) RETURNS VARCHAR(40)
 BEGIN
-    DECLARE description VARCHAR(20);
+    DECLARE description VARCHAR(100);
     DECLARE stat VARCHAR(20);
     DECLARE inc TINYINT;
     DECLARE inc_description VARCHAR(20);

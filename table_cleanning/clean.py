@@ -2,6 +2,7 @@ import csv
 import re
 
 datas = []
+max_des = 0
 with open('movepool.csv') as f:
     spamreader = csv.reader(f, delimiter=',')
     header = next(spamreader) # ignore first line
@@ -37,7 +38,18 @@ with open('movepool.csv') as f:
             elif 'by three stage' in description: effect += '3'
         if effect!='' and prob=='': prob='100'
 
+        if max_des < len(description):max_des = len(description)
+        
+        if atk=='': atk='NULL'
+        if accuracy=='': accuracy='NULL'
+        if prob=='': prob='NULL'
+        if effect=='': effect='NULL'
+        if min_times=='': min_times=1
+        if max_times=='': max_times=1
+
         datas.append([mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,description,effect_target,min_times,max_times])
+
+print('max des', max_des)
 
 with open('movepool_cleanup.csv', 'w', newline='') as csvfile:
     spamwriter = csv.writer(csvfile, delimiter=',',

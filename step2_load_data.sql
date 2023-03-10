@@ -1,37 +1,28 @@
-INSERT INTO nature_table (nature_id, nature, nature_atk, nature_spatk) VALUES 
-    (15, 'modest', 0.9, 1.1);
-
-INSERT INTO pokedex VALUES
-    (171, 'Lanturn', 'water', 'electric', 125, 58, 58, 76, 76, 67);
-
-INSERT INTO movepool VALUES
-    (56, 'Hydro Pump', 'water', 5, 0, 'special', 120, 80, NULL, NULL, NULL, 1, 1),
-    (58, 'Ice Beam', 'ice', 10, 0, 'special', 90, 100, 10, 'freeze', 1, 1, 1),
-    (86, 'Thunder Wave', 'electric', 20, 0, 'status', NULL, 90, 100, 'paralysis', 1, 1, 1),
-    (435, 'Discharge', 'electric', 15, 0, 'special', 80, 120, 30, 'paralysis', 1, 1, 1),
-    (92, 'Toxic', 'poison', 10, 0, 'status', NULL, 90, 100, 'badly poison', 1, 1, 1);
-
-DELETE FROM type_chart;
-INSERT INTO type_chart VALUES
-    ('water', 'electric', 1.0),
-    ('electric', 'water', 2.0),
-    ('electric', 'electric', 0.5),
-    ('water', 'water', 0.5),
-    ('ice', 'water', 0.5),
-    ('ice', 'electric', 1.0);
+DELETE FROM team;
+DELETE FROM owns;
+DELETE FROM trainer;
+DELETE FROM pokemon;
+DELETE FROM know;
 
 INSERT INTO know VALUES
     (171, 92),
     (171, 56),
     (171, 58),
     (171, 86),
-    (171, 435);
+    (171, 204),
+    (171, 268),
+    (171, 297),
+    (171, 299),
+    (171, 315),
+    (171, 330),
+    (171, 142),
+    (171, 345);
 
-INSERT INTO pokemon (pkdex, nature_id, mv_id_1, mv_id_2) VALUES
-    (171, 15, 56, 86),
-    (171, 15, 58, 435),
-    (171, 15, 86, 92),
-    (171, 15, 56, 92);
+INSERT INTO pokemon (pkm_id, pkdex, mv_id_1, mv_id_2, mv_id_3, mv_id_4) VALUES
+    (1, 171, 56, 86, 297, 268),
+    (2, 171, 142, 345, 330, 315),
+    (3, 171, 299, 297, 268, 204),
+    (4, 171, 92, 56, 58, 86);
 
 INSERT INTO trainer VALUES
     (1, 'Jeff', 'jeff123'),
@@ -42,6 +33,7 @@ INSERT INTO owns VALUES
     (2, 2),
     (1, 3),
     (2, 4);
+
 
 INSERT INTO team (trainer_id, pkm_id_1, pkm_id_2) VALUES
     (1, 1, 3),

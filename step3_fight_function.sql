@@ -37,11 +37,11 @@ BEGIN
         FROM movepool WHERE mv_id=move_id;
 
     SELECT ele_type_1, ele_type_2 INTO def_ele_type_1, def_ele_type_2
-        FROM pokemon, pokedex WHERE pkm_id=def_id;
+        FROM pokemon NATURAL JOIN pokedex WHERE pkm_id=def_id;
 
     IF NOT ISNULL(atk_id) THEN
         SELECT ele_type_1, ele_type_2 INTO atk_ele_type_1, atk_ele_type_2
-            FROM pokemon, pokedex WHERE pkm_id=atk_id;
+            FROM pokemon NATURAL JOIN pokedex WHERE pkm_id=atk_id;
         IF atk_ele_type_1=mv_ele_type OR atk_ele_type_2=mv_ele_type THEN
             SET factor = 1.5;
         END IF;
@@ -75,7 +75,7 @@ BEGIN
     DECLARE cur_atk FLOAT;
     DECLARE cur_def FLOAT;
     DECLARE cur_lv TINYINT;
-    DECLARE cur_movepower TINYINT;
+    DECLARE cur_movepower TINYINT UNSIGNED;
     DECLARE cur_category VARCHAR(8);
 
     SELECT category, movepower INTO cur_category, cur_movepower
@@ -100,7 +100,7 @@ BEGIN
             FROM fighting_status
             WHERE pkm_id=def_id;
 
-        IF status='BURN' THEN
+        IF cur_status='BURN' THEN
             SET factor = 0.5;
         END IF;
 

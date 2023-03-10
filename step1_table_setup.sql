@@ -20,12 +20,12 @@ CREATE TABLE pokedex (
     ele_type_1 VARCHAR(8) NOT NULL,
     ele_type_2 VARCHAR(8),
     -- Species strength 0~255
-    strength_hp TINYINT,
-    strength_atk TINYINT,
-    strength_def TINYINT,
-    strength_spatk TINYINT,
-    strength_spdef TINYINT,
-    strength_spd TINYINT,
+    strength_hp TINYINT UNSIGNED,
+    strength_atk TINYINT UNSIGNED,
+    strength_def TINYINT UNSIGNED,
+    strength_spatk TINYINT UNSIGNED,
+    strength_spdef TINYINT UNSIGNED,
+    strength_spd TINYINT UNSIGNED,
     PRIMARY KEY (pkdex)
 );
 
@@ -40,7 +40,7 @@ CREATE TABLE movepool (
     category VARCHAR(8),
     -- NULL if is pure status move
     -- 0 ~ 200?
-    movepower TINYINT,
+    movepower TINYINT UNSIGNED,
     -- 0 ~ 100
     accuracy TINYINT,
     -- additional effect, NULL if is pure atk move
@@ -49,6 +49,7 @@ CREATE TABLE movepool (
     prob TINYINT,
     -- 
     effect VARCHAR(20),
+    description VARCHAR(100),
     -- 0 is itself, 1 is opponent
     effect_target TINYINT DEFAULT 1,
     -- times: 1, 2, or 2~5
@@ -100,12 +101,12 @@ CREATE TABLE pokemon (
     mv_id_4 INTEGER,
     -- can select manually,
     -- sum 510, each max 252
-    EV_hp TINYINT DEFAULT 0,
-    EV_atk TINYINT DEFAULT 0,
-    EV_def TINYINT DEFAULT 0,
-    EV_spatk TINYINT DEFAULT 0,
-    EV_spdef TINYINT DEFAULT 0,
-    EV_spd TINYINT DEFAULT 0, 
+    EV_hp TINYINT UNSIGNED DEFAULT 0,
+    EV_atk TINYINT UNSIGNED DEFAULT 0,
+    EV_def TINYINT UNSIGNED DEFAULT 0,
+    EV_spatk TINYINT UNSIGNED DEFAULT 0,
+    EV_spdef TINYINT UNSIGNED DEFAULT 0,
+    EV_spd TINYINT UNSIGNED DEFAULT 0, 
     -- randomly generated, 0~31 
     IV_hp TINYINT ,
     IV_atk TINYINT,
@@ -136,7 +137,7 @@ BEGIN
     IF ISNULL(NEW.IV_spdef) THEN SET NEW.IV_spdef = FLOOR( RAND()*32 ); END IF;
     IF ISNULL(NEW.IV_spd)   THEN SET NEW.IV_spd   = FLOOR( RAND()*32 ); END IF;
     
-    IF ISNULL(NEW.nature_id) THEN SET NEW.nature_id = FLOOR( RAND()*25 ); END IF;
+    IF ISNULL(NEW.nature_id) THEN SET NEW.nature_id = 1+FLOOR( RAND()*25 ); END IF;
     IF ISNULL(NEW.gender) THEN SET NEW.gender = FLOOR( RAND()*2 ); END IF;
 END !
 DELIMITER ;
@@ -153,7 +154,7 @@ CREATE VIEW pokemon_view AS
         FLOOR( (FLOOR((2*strength_spatk + IV_spatk + FLOOR(EV_spatk/4))*lv/100)+5)*nature_spatk ) AS spatk,
         FLOOR( (FLOOR((2*strength_spdef + IV_spdef + FLOOR(EV_spdef/4))*lv/100)+5)*nature_spdef ) AS spdef,
         FLOOR( (FLOOR((2*strength_spd + IV_spd + FLOOR(EV_spd/4))*lv/100)+5)*nature_spd ) AS spd
-    FROM pokemon, pokedex, nature_table;
+    FROM pokemon NATURAL JOIN pokedex NATURAL JOIN nature_table;
 
 
 CREATE TABLE trainer (

@@ -1,5 +1,5 @@
 mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,description,effect_target,min_times,max_times
-1,pound,normal,35,0,physical,40,100,,,inflicts regular damage with no additional effect.,1,,
+1,pound,normal,35,0,physical,40,100,NULL,NULL,inflicts regular damage with no additional effect.,1,NULL,NULL
 3,double-slap,normal,10,0,physical,15,85,,,hits 2-5 times in one turn.,1,2,5
 4,comet-punch,normal,15,0,physical,18,85,,,hits 2-5 times in one turn.,1,2,5
 5,mega-punch,normal,20,0,physical,80,85,,,inflicts regular damage with no additional effect.,1,,
