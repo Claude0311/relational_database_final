@@ -249,6 +249,8 @@ ot: BEGIN
             CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'));
         ELSEIF pkm_1_status='freeze' THEN
             CALL log_to_fight(CONCAT(pkm_1_name, 'is frozen. It can\'t move!'));
+        ELSEIF pkm_1_status='sleep' THEN
+            CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'));
         ELSE
             CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, pkm_2_fainted);
         END IF;
@@ -264,6 +266,8 @@ ot: BEGIN
                 CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'));
             ELSEIF pkm_2_status='freeze' THEN
                 CALL log_to_fight(CONCAT(pkm_2_name, 'is frozen. It can\'t move!'));
+            ELSEIF pkm_2_status='sleep' THEN
+                CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'));
             ELSE
                 CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, pkm_1_fainted);
             END IF;
@@ -280,6 +284,8 @@ ot: BEGIN
             CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'));
         ELSEIF pkm_2_status='freeze' THEN
             CALL log_to_fight(CONCAT(pkm_2_name, 'is frozen. It can\'t move!'));
+        ELSEIF pkm_2_status='sleep' THEN
+            CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'));
         ELSE
             CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, pkm_1_fainted);
         END IF;
@@ -295,6 +301,8 @@ ot: BEGIN
                 CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'));
             ELSEIF pkm_1_status='freeze' THEN
                 CALL log_to_fight(CONCAT(pkm_1_name, 'is frozen. It can\'t move!'));
+            ELSEIF pkm_1_status='sleep' THEN
+                CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'));
             ELSE
                 CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, pkm_2_fainted);
             END IF;
