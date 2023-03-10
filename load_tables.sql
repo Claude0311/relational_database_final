@@ -1,4 +1,4 @@
-LOAD DATA LOCAL INFILE 'pokedex.csv' INTO TABLE pokedex
+LOAD DATA LOCAL INFILE 'pokedex_cleanup.csv' INTO TABLE pokedex
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE 'movepool_cleanup.csv' INTO TABLE movepool
