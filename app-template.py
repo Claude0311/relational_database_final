@@ -341,8 +341,8 @@ def print_field(pkm_1, pkm_2):
     print('#'*100)
     print('%s|'%offset)
     escape_char = '\033[0m'
-    with open(f"pkmimg/{pkm_1['name'].lower()}", mode="r", encoding="utf-8") as f1:
-        with open(f"pkmimg/{pkm_2['name'].lower()}", mode="r", encoding="utf-8") as f2:
+    with open(f"pkmimg/{pkm_1['name'].lower().replace('.','')}", mode="r", encoding="utf-8") as f1:
+        with open(f"pkmimg/{pkm_2['name'].lower().replace('.','')}", mode="r", encoding="utf-8") as f2:
             for p1, p2 in zip_longest(f1.readlines(), f2.readlines()):
                 if p1 is not None and p1!= escape_char:
                     print(' '*(50-p1.count("▀")-p1.count("▄")-p1.count(' ')-2), end='')
