@@ -149,6 +149,13 @@ BEGIN
     DECLARE A FLOAT default 0;
     DECLARE B FLOAT default 0;
 
+    -- Load accuracy for move
+    SELECT accuracy INTO mov_acc
+            FROM movepool
+            WHERE mv_id=move_id;
+
+    if ISNULL(mov_acc) THEN RETURN 1; END IF;
+
     -- Load accuracy for attacking pokemon
     SELECT acc INTO atk_acc
             FROM fighting_status
@@ -158,11 +165,6 @@ BEGIN
     SELECT evasion INTO def_eva
             FROM fighting_status
             WHERE pkm_id=def_id;
-    
-    -- Load accuracy for move
-    SELECT accuracy INTO mov_acc
-            FROM movepool
-            WHERE mv_id=move_id;
     
     SET factor = atk_acc - def_eva;
 

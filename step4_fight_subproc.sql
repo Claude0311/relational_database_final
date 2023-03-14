@@ -128,53 +128,70 @@ um: BEGIN
     DECLARE effect_prob TINYINT;
     DECLARE target_id INTEGER;
     DECLARE target_name VARCHAR(50);
+    DECLARE hit TINYINT DEFAULT 1;
+    DECLARE move_hit_time TINYINT DEFAULT 0;
+    DECLARE move_select_hit_time TINYINT;
 
     SET fainted=0;
 
-    SELECT category, move_name, effect_target, effect, prob
-    INTO cur_category, cur_mv_name, move_target, move_effect, effect_prob
+    SELECT category, move_name, effect_target, effect, prob, min_times + FLOOR(RAND()*(max_times-min_times+1))
+    INTO cur_category, cur_mv_name, move_target, move_effect, effect_prob, move_select_hit_time
         FROM movepool
         WHERE mv_id=move_id;
 
     CALL log_to_fight(CONCAT(atker_name, ' use ', cur_mv_name));
 
     -- Check miss
+    SET hit = is_hit(atk_id, def_id, move_id);
+    if hit = 0 THEN
+        CALL log_to_fight('But it missed!');
+        LEAVE um;
+    END IF;
     
-    IF cur_category!='status' THEN
-        -- effectiveness check
-        SET effectiveness = move_effectiveness(NULL, def_id, move_id);
-        IF effectiveness = 0.0 THEN
-            CALL log_to_fight('But, it failed!');
-        ELSEIF effectiveness < 1.0 THEN
+    SET effectiveness = move_effectiveness(NULL, def_id, move_id);
+    
+    IF effectiveness = 0.0 THEN
+        CALL log_to_fight('But, it failed!');
+        LEAVE um;
+    ELSEIF cur_category!='status' THEN
+        IF effectiveness < 1.0 THEN
             CALL log_to_fight('It\'s not very effective...');
         ELSEIF effectiveness > 1.0 THEN
             CALL log_to_fight('It\'s super effective!');
         END IF;
+    END IF;
 
-        -- deal damage
-        SET damage = calculate_damage(atk_id, def_id, move_id);
-        UPDATE fighting_status SET
-            hp = GREATEST(hp - damage, 0)
-            WHERE pkm_id=def_id;
+    myloop: WHILE move_hit_time < move_select_hit_time DO
+        SET move_hit_time = move_hit_time + 1;
+        IF cur_category!='status' THEN
+            -- deal damage
+            SET damage = calculate_damage(atk_id, def_id, move_id);
+            UPDATE fighting_status SET
+                hp = GREATEST(hp - damage, 0)
+                WHERE pkm_id=def_id;
 
-        -- check fainted
-        SELECT hp=0 INTO fainted
-            FROM fighting_status
-            WHERE pkm_id=def_id;
-        IF fainted=1 THEN
-            CALL log_to_fight(CONCAT(defer_name, ' fainted!'));
+            -- check fainted
+            SELECT hp=0 INTO fainted
+                FROM fighting_status
+                WHERE pkm_id=def_id;
+            IF fainted=1 THEN
+                CALL log_to_fight(CONCAT(defer_name, ' fainted!'));
+                LEAVE myloop;
+            END IF;
         END IF;
-    END IF;
 
-    IF NOT(fainted=1 AND move_target=1) AND RAND()*100<=effect_prob THEN
-        -- additional effect triggered
-        -- set addition effect's target
-        SET target_id = IF(move_target=1, def_id, atk_id);
-        SET target_name = IF(move_target=1, defer_name, atker_name);
+        IF NOT(fainted=1 AND move_target=1) AND RAND()*100<=effect_prob THEN
+            -- additional effect triggered
+            -- set addition effect's target
+            SET target_id = IF(move_target=1, def_id, atk_id);
+            SET target_name = IF(move_target=1, defer_name, atker_name);
+            CALL deal_effect(move_effect, target_id, target_name);
+        END IF;
+    END WHILE;
 
-        CALL deal_effect(move_effect, target_id, target_name);
-
-    END IF;
+    IF move_select_hit_time>1 THEN
+        CALL log_to_fight(CONCAT('HIT ',move_hit_time,' times!'));
+    END IF; 
 
 END $$
 

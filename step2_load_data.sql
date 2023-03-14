@@ -2,27 +2,15 @@ DELETE FROM team;
 DELETE FROM owns;
 DELETE FROM trainer;
 DELETE FROM pokemon;
-DELETE FROM know;
 
-INSERT INTO know VALUES
-    (171, 92),
-    (171, 56),
-    (171, 58),
-    (171, 86),
-    (171, 204),
-    (171, 268),
-    (171, 297),
-    (171, 299),
-    (171, 315),
-    (171, 330),
-    (171, 142),
-    (171, 345);
+SELECT * FROM pokedex NATURAL JOIN know NATURAL JOIN movepool
+    WHERE pkdex = 91;
 
 INSERT INTO pokemon (pkm_id, pkdex, mv_id_1, mv_id_2, mv_id_3, mv_id_4) VALUES
-    (1, 171, 56, 86, 297, 268),
-    (2, 171, 142, 345, 330, 315),
-    (3, 171, 299, 297, 268, 204),
-    (4, 171, 92, 56, 58, 86);
+    (1, 171, 58, 59, 61, 85),
+    (2, 171, 86, 87, 92, 97),
+    (4, 171, 103, 104, 133, 145),
+    (5, 91, 41, 42, 43, 59);
 
 INSERT INTO trainer VALUES
     (1, 'Jeff', 'jeff123'),
@@ -31,10 +19,10 @@ INSERT INTO trainer VALUES
 INSERT INTO owns VALUES 
     (1, 1),
     (2, 2),
-    (1, 3),
+    (1, 5),
     (2, 4);
 
 
 INSERT INTO team (trainer_id, pkm_id_1, pkm_id_2) VALUES
-    (1, 1, 3),
+    (1, 1, 5),
     (2, 2, 4);

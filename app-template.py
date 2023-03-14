@@ -161,7 +161,7 @@ player_1 = None
 player_2 = None
 player_1_name = None
 player_2_name = None
-player_2_offset = ' '*30
+player_2_offset = ' '*50
 
 def print_log_file():
     datas = get_fighting_status(option=1)
@@ -194,23 +194,34 @@ def enter_fight():
     
 def select_move(pkm_id, cur_pkm, opp_pkm, offset = ''):
     moves = get_moves(pkm_id)
+    movelist = ['1', '2', '3', '4']
+    moveinfo = ['1s', '2s', '3s', '4s']
     while True:
         os.system('cls')
         print_field(cur_pkm, opp_pkm)
         print('%swhat will %s do?'%(offset, cur_pkm['name']))
+        print('%s info | use'%offset)
         for index, (mid, mname) in enumerate( moves ):
-            print('%s (%d) - %s'%(offset, index+1, mname))
-        print('%s (b) - back'%offset)
+            print('%s (%ds) | (%d) - %s'%(offset, index+1, index+1, mname))
+        print('%s        (b) - back'%offset)
         print()
         ans = input('%sEnter an option: '%offset)
-        if ans=='b': return -1
-        elif 1<=int(ans)<=len(moves): 
-            print('You choose %s'%moves[int(ans)-1][1])
-            return moves[int(ans)-1][0]
-        else:
-            print('invalid option')
-            sleep(1)
-
+        try:
+            if ans=='b': return -1
+            elif ans in movelist[:len(moves)]: 
+                print('You choose %s'%moves[int(ans)-1][1])
+                return moves[int(ans)-1][0]
+            elif ans in moveinfo[:len(moves)]:
+                get_move_detail(moves[int(ans[0])-1][0])
+                print()
+                input('press any key to continue')
+            else:
+                print('invalid option')
+                sleep(1)
+        except Exception as e:
+            print(e)
+            sleep(2)
+import re
 def get_moves(pkm_id):
     try:
         row = (pkm_id, None, None, None, None, None, None, None, None)
@@ -222,10 +233,30 @@ def get_moves(pkm_id):
                 result.append((output[1+i*2], output[1+i*2+1]))
     except mysql.connector.Error as e:
         print(e)
+        sleep(3)
     finally:
         cursor.close()
         return result
 
+def get_move_detail(mv_id):
+    try:
+        cursor = conn.cursor()
+        sql = 'SELECT move_name, ele_type, category, movepower, accuracy, prob, description FROM movepool WHERE mv_id=%d'%mv_id
+        output = cursor.execute(sql)
+        for move_name, ele_type, category, movepower, accuracy, prob, description in cursor.fetchall():
+            print(move_name)
+            print('    type:',ele_type)
+            print('category:',category)
+            print('   power:',movepower if movepower is not None else '---')
+            print('accuracy:',accuracy if accuracy is not None else '---')
+            print('  effect:',re.sub('\$effect_chance', str(prob), description))
+
+    except mysql.connector.Error as e:
+        print('move detail')
+        print(e)
+        sleep(3)
+    finally:
+        cursor.close()
     
 def select_pokemon(datas, must=False):
     while True:
@@ -262,8 +293,7 @@ def print_pkm_info(data):
         print()
         moves = get_moves(data['id'])
         for _, move in moves:
-            print(' - ',end='')
-            print(move)
+            print(' - %s'%(move))
         print()
         print(' * attack   %2d'%data['stat_change']['atk'])
         print(' * defense  %2d'%data['stat_change']['def'])
@@ -275,12 +305,12 @@ def print_pkm_info(data):
         print('###################################')
         print()
         if data['choosen']==0 and data['hp'][0]>0:
-            print(' (s) - switch')
+            print(' (1) - switch')
         print(' (b) - back')
         print()
         ans = input('Enter an option: ')
         if ans == 'b': return -1
-        elif ans=='s' and data['choosen']==0: return 1
+        elif ans=='1' and data['choosen']==0: return 1
         else: 
             print('invalid option')
             sleep(1)
@@ -302,17 +332,49 @@ def get_player_info(player_name):
         cursor.close()
         return (trainer_id, trainer_name)
 
+from itertools import zip_longest
 def print_field(pkm_1, pkm_2):
     offset = player_2_offset
-    if pkm_1['trainer']==2:
+    if pkm_1['trainer']==player_2:
         pkm_1, pkm_2 = pkm_2, pkm_1
     print('%s|%s'% (player_1_name.center(len(offset)), player_2_name.center(len(offset))))
-    print('#'*60)
+    print('#'*100)
     print('%s|'%offset)
-    print('     %-25s|     %s'%(pkm_1['name'], pkm_2['name']))
-    print('        %3d/%-3d %-14s|        %3d/%-3d %s'%(pkm_1['hp'][0], pkm_1['hp'][1], pkm_1['status'] or '', pkm_2['hp'][0], pkm_2['hp'][1], pkm_2['status'] or ''))
+    escape_char = '\033[0m'
+    with open(f"pkmimg/{pkm_1['name'].lower()}", mode="r", encoding="utf-8") as f1:
+        with open(f"pkmimg/{pkm_2['name'].lower()}", mode="r", encoding="utf-8") as f2:
+            for p1, p2 in zip_longest(f1.readlines(), f2.readlines()):
+                if p1 is not None and p1!= escape_char:
+                    print(' '*(50-p1.count("▀")-p1.count("▄")-p1.count(' ')-2), end='')
+
+                    ##### reverse the image #####
+                    text = ''
+                    ptr = 0
+                    for i, c in enumerate(p1[:-1]):
+                        if c in ' ▀▄':
+                            if c == '▀':
+                                text = escape_char + text
+                            text = p1[ptr:i+1] + text
+                            ptr = i+1
+                    #############################
+
+                    print('%s%s  |'%(text,escape_char), end='')
+                elif p1 == escape_char:
+                    print(p1, end='')
+                    print(' '*50, end='')
+                    print('|',end='')
+                else:
+                    print('%50s|'%' ', end='')
+                if p2 is not None and p2 != "\033[0m":
+                    print('  %s%s'%(p2[:-1], escape_char))
+                elif p2 == escape_char:
+                    print(p2)
+                else:
+                    print()
+    print('     %-45s|     %s'%(pkm_1['name'], pkm_2['name']))
+    print('        %3d/%-3d %-34s|        %3d/%-3d %s'%(pkm_1['hp'][0], pkm_1['hp'][1], pkm_1['status'] or '', pkm_2['hp'][0], pkm_2['hp'][1], pkm_2['status'] or ''))
     print('%s|'%offset)
-    print('#'*60)
+    print('#'*100)
 
 def player_action(datas, player_me, player_opp, player_name, offset = ''):
     # player one
@@ -376,12 +438,12 @@ def one_turn():
     (pkm_id_1, move_id_1, switch_pokemon_1) = player_action(datas, player_1, player_2, player_1_name)
     (pkm_id_2, move_id_2, switch_pokemon_2) = player_action(datas, player_2, player_1, player_2_name, offset=player_2_offset)
     try:
-        os.system('cls')
         cursor = conn.cursor()
         winner = None
         fainted_1 = None
         fainted_2 = None
         output_one_turn = cursor.callproc('one_turn', [pkm_id_1, pkm_id_2, move_id_1, move_id_2, switch_pokemon_1, switch_pokemon_2, None, None, None])
+        os.system('cls')
         print_log_file()
         winner = output_one_turn[6]
         fainted_1 = output_one_turn[7]
@@ -455,7 +517,7 @@ def player_login():
     global player_1_name
     global player_2_name
     while True:
-        player_1_name = input('player 1 login:')
+        player_1_name = input('player 1 login: ')
         try:
             # change to CHECK password later
             player_1, player_1_name = get_player_info(player_1_name)
@@ -466,7 +528,7 @@ def player_login():
             continue
     while True:
         print(player_2_offset, end='')
-        player_2_name = input('player 2 login:')
+        player_2_name = input('player 2 login: ')
         try:
             # change to CHECK password later
             if player_2_name == player_1_name: raise Exception('trainer duplicate')
