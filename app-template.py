@@ -48,12 +48,12 @@ def get_conn():
     try:
         conn = mysql.connector.connect(
           host='localhost',
-          user='jeff',
+          user='root',
           # Find port in MAMP or MySQL Workbench GUI or with
           # SHOW VARIABLES WHERE variable_name LIKE 'port';
           port='3306',  # this may change!
         #   password='adminpw',
-          database='final_project' # replace this with your database name
+          database='pokedb' # replace this with your database name
         )
         print('Successfully connected.')
         return conn
@@ -321,7 +321,7 @@ def get_player_info(player_name):
         trainer_id = None
         cursor = conn.cursor()
         sql = 'SELECT trainer_id, trainer_name \
-                FROM team LEFT JOIN trainer USING(trainer_id)\
+                FROM trainer LEFT JOIN team USING(trainer_id)\
                 WHERE trainer_name=\'%s\';'%player_name
         cursor.execute(sql)
         for row in cursor.fetchall():
@@ -330,6 +330,7 @@ def get_player_info(player_name):
         print(e)
     finally:
         cursor.close()
+        print('{}, {}'.format(trainer_id, trainer_name))
         return (trainer_id, trainer_name)
 
 from itertools import zip_longest
@@ -540,12 +541,110 @@ def player_login():
             print('invalid input')
             continue
 
+def create_pokemon(pkdex):
+    try:
+        cursor = conn.cursor()
+        cursor.execute('SELECT mv_id, move_name FROM pokedex NATURAL JOIN know NATURAL JOIN movepool WHERE pkdex = %s;', (pkdex,))
+        move_list = cursor.fetchall()
+        data_pokemon = [pkdex]
+        # User chooses 4 moves for pokemon
+        for i in range(4):
+            os.system('cls')
+            for move in move_list:
+                print('{}: {}'.format(move[0], move[1]))
+            move_choice = int(input('Move {}: Choose a move (by id)\n'.format(i+1)))
+            data_pokemon.append(move_choice)
+        # Sets effort values for pokemon
+        while True:
+            os.system('cls')
+            print('Choose your pokemon\'s effort values.')
+            print('Input should be formatted as \'hp,atk,def,spatk,spdef,spd\'.')
+            print('Each stat can be at most 252 and their sum must be <=510.')
+            stats = list(map(int, input().split(',')))
+            if len(stats) != 6 or sum(stats) > 510 or max(stats) > 252:
+                print("Invalid Input. Try Again.")
+            else:
+                data_pokemon.extend(stats)
+                break
+
+        add_pokemon = ('INSERT INTO pokemon '
+                    '(pkdex, mv_id_1, mv_id_2, mv_id_3, mv_id_4, EV_hp, EV_atk, EV_def, EV_spatk, EV_spdef, EV_spd) '
+                    'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)')
+        cursor.execute(add_pokemon, data_pokemon)
+        pkm_id = cursor.lastrowid
+        conn.commit()
+            
+    except mysql.connector.Error as e:
+        print(e)
+        sleep(1)
+    finally:
+        cursor.close()
+        return pkm_id
+
+def create_trainer():
+    try:
+        cursor = conn.cursor()
+        # Create username and password
+        trainer_name = input('Set trainer name: ')
+        password = input('Set password: ')
+        add_trainer = ('INSERT INTO trainer '
+                    '(trainer_name, password) '
+                    'VALUES (%s, %s)')
+        data_trainer = (trainer_name, password)
+        # Add username and password to database
+        cursor.execute(add_trainer, data_trainer)
+        trainer_id = cursor.lastrowid
+        conn.commit()
+        # Show list of pokemon
+        cursor.execute('SELECT pkdex, pkm_name FROM pokedex')
+        pk_list = cursor.fetchall()
+        data_team = [None]*7
+        data_team[0] = trainer_id
+        pk_num = int(input('How many pokemon on your team? (<=6): '))
+        # User creates their team of desired pokemon
+        for i in range(pk_num):
+            os.system('cls')
+            for pk in pk_list:
+                print('{}: {}'.format(pk[0], pk[1]))
+            pkdex = int(input('Pokemon {}: Which pokemon would you like to add? (by id)\n'.format(i+1)))
+            pkm_id = create_pokemon(pkdex)
+            data_team[i+1] = pkm_id
+            add_owns = ('INSERT INTO owns '
+                    '(trainer_id, pkm_id) '
+                    'VALUES (%s, %s)')
+            data_owns = (trainer_id, pkm_id)
+            cursor.execute(add_owns, data_owns)
+            conn.commit()
+        # Adds team to database
+        add_team = ('INSERT INTO team '
+                    '(trainer_id, pkm_id_1, pkm_id_2, pkm_id_3, pkm_id_4, pkm_id_5, pkm_id_6) '
+                    'VALUES (%s, %s, %s, %s, %s, %s, %s)')
+        cursor.execute(add_team, data_team)
+        conn.commit()
+    except mysql.connector.Error as e:
+        print(e)
+        sleep(1)
+    finally:
+        cursor.close()
+        return trainer_id
 
 def main():
     """
     Main function for starting things up.
     """
-    player_login()
+    while True:
+        os.system('cls')
+        print('1. Login')
+        print('2. Create Trainer')
+        choice = input()
+        if choice == '1':
+            player_login()
+            break
+        elif choice == '2':
+            create_trainer()
+        else:
+            print('Invalid input. Try again.')
+    
     enter_fight()
     while True:
         winner = one_turn()

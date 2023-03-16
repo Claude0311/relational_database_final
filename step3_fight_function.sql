@@ -191,6 +191,71 @@ BEGIN
     END IF;
 END !
 
+-- Finds which pokemon attacks first taking into account paralysis
+CREATE FUNCTION compare_speed (
+    pkm_id_0 INTEGER,
+    pkm_id_1 INTEGER,
+    move_id_0 INTEGER,
+    move_id_1 INTEGER
+) RETURNS TINYINT NOT DETERMINISTIC
+BEGIN
+    DECLARE move_0_priority INTEGER default 0;
+    DECLARE move_1_priority INTEGER default 0;
+    DECLARE pkm_0_spd INTEGER default 0;
+    DECLARE pkm_1_spd INTEGER default 0;
+    DECLARE pkm_0_status VARCHAR(20) DEFAULT NULL;
+    DECLARE pkm_1_status VARCHAR(20) DEFAULT NULL;
+
+    -- Load priority for pkm 0's move
+    SELECT priority INTO move_0_priority
+            FROM movepool
+            WHERE mv_id=move_id_0;
+    -- Load priority for pkm 1's move
+    SELECT priority INTO move_1_priority
+            FROM movepool
+            WHERE mv_id=move_id_1;
+    -- Load speed for pkm 0
+    SELECT spd INTO pkm_0_spd
+            FROM pokemon_view
+            WHERE pkm_id=pkm_id_0;
+    -- Load speed for pkm 1
+    SELECT spd INTO pkm_1_spd
+            FROM pokemon_view
+            WHERE pkm_id=pkm_id_1;
+    -- Load status for pkm 0
+    SELECT status INTO pkm_0_status
+            FROM fighting_status
+            WHERE pkm_id=pkm_id_0;
+    -- Load status for pkm 1
+    SELECT status INTO pkm_1_status
+            FROM fighting_status
+            WHERE pkm_id=pkm_id_1;
+    -- Check if pkm 0 is paralyzed
+    IF pkm_0_status = 'Paralysis' THEN
+        SET pkm_0_spd = 0.25*pkm_0_spd;
+    END IF;
+    -- Check if pkm 1 is paralyzed
+    IF pkm_1_status = 'Paralysis' THEN
+        SET pkm_1_spd = 0.25*pkm_1_spd;
+    END IF;
+    -- Compare move priority
+    IF move_0_priority > move_1_priority THEN
+        RETURN 0;
+    ELSEIF move_1_priority > move_0_priority THEN
+        RETURN 1;
+    ELSE
+        -- Compare pokemon speed
+        IF pkm_0_spd > pkm_1_spd THEN
+            RETURN 0;
+        ELSEIF pkm_1_spd > pkm_0_spd THEN
+            RETURN 1;
+        ELSE
+            -- Choose randomly if speed is the same
+            RETURN FLOOR(RAND()*2);
+        END IF;
+    END IF;
+END !
+
 DELIMITER ;
 -- TEST
 /* SELECT calculate_damage(1, 2, 56) AS Hydro_Pump,
