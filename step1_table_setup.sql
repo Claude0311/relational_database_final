@@ -28,6 +28,7 @@ CREATE TABLE pokedex (
     strength_spd TINYINT UNSIGNED,
     PRIMARY KEY (pkdex)
 );
+CREATE INDEX ele_type_index ON pokedex(ele_type_1, ele_type_2);
 
 CREATE TABLE movepool (
     mv_id INTEGER AUTO_INCREMENT,

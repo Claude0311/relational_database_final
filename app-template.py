@@ -48,12 +48,14 @@ def get_conn():
     try:
         conn = mysql.connector.connect(
           host='localhost',
-          user='root',
+        #   user='root',
+          user='jeff',
           # Find port in MAMP or MySQL Workbench GUI or with
           # SHOW VARIABLES WHERE variable_name LIKE 'port';
           port='3306',  # this may change!
         #   password='adminpw',
-          database='pokedb' # replace this with your database name
+        #   database='pokedb' # replace this with your database name
+          database='final_project'
         )
         print('Successfully connected.')
         return conn

@@ -238,8 +238,9 @@ ot: BEGIN
     CALL check_status_case1(pkm_id_2, pkm_2_name, switch_pkm_id_2, pkm_2_status, pkm_2_status_count);
 
     -- compare speed
-    -- SET pkm_1_goes_first = 0 / 1
-
+    IF NOT ISNULL(move_id_1) AND NOT ISNULL(move_id_2) THEN
+        SET pkm_1_goes_first = compare_speed(pkm_id_2, pkm_id_1, move_id_2, move_id_1);
+    END IF;
     -- first pkm use move
     -- check paralysis
     IF pkm_1_goes_first=1 THEN
