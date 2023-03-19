@@ -9,6 +9,7 @@ DROP PROCEDURE IF EXISTS handle_surrender;
 
 DELIMITER $$
 
+-- check if any of the player surrender
 CREATE PROCEDURE handle_surrender(
     IN player_1_surrender TINYINT,
     IN player_2_surrender TINYINT,
@@ -35,6 +36,7 @@ BEGIN
     END IF;
 END $$
 
+-- update fighting_status if any of the player switch pokemon
 CREATE PROCEDURE handle_switch(
     INOUT cur_pkm_id INTEGER,
     IN switch_pkm_id INTEGER,
@@ -44,7 +46,7 @@ CREATE PROCEDURE handle_switch(
 BEGIN
     -- switch
     IF NOT ISNULL(switch_pkm_id) THEN
-        -- reset pkm's atk
+        -- reset pkm's stat change
         UPDATE fighting_status 
             SET atk=0, def=0, spatk=0, spdef=0, spd=0, acc=0, evasion=0, choosen=0
             WHERE pkm_id=cur_pkm_id;
@@ -66,6 +68,7 @@ BEGIN
     SET cur_pkm_name=CONCAT(player_name, '\'s ', cur_pkm_name);
 END $$
 
+-- check if a player's pokemon all fainted, which means the player lost
 CREATE FUNCTION allfainted(
     fainted_pkm_id INTEGER
 ) RETURNS TINYINT
@@ -77,13 +80,14 @@ BEGIN
         FROM fighting_status 
         WHERE pkm_id=fainted_pkm_id;
 
+    -- check if any of his pokemon is still alive
     SELECT COUNT(pkm_id)=0 INTO allfainted
         FROM fighting_status
         WHERE trainer_id=owner_id AND hp>0;
     RETURN allfainted;
 END $$
 
-
+-- handle status condition at the beginning of one turn
 CREATE PROCEDURE check_status_case1(
     IN cur_pkm_id INTEGER,
     IN pkm_name VARCHAR(20),
@@ -126,6 +130,7 @@ BEGIN
     END IF;
 END $$
 
+-- handle status condition at the end of one turn
 CREATE PROCEDURE check_status_case2(
     IN cur_pkm_id INTEGER,
     IN pkm_name VARCHAR(50),
@@ -139,21 +144,25 @@ BEGIN
         INTO pkm_status, pkm_status_count
         FROM fighting_status 
         WHERE pkm_id=cur_pkm_id;
-
+    
+    -- deal burn damage
     IF pkm_status='burn' THEN
         UPDATE fighting_status 
             SET hp = GREATEST(hp - GREATEST(FLOOR(max_hp/16), 1), 0)
             WHERE pkm_id=cur_pkm_id;
         CALL log_to_fight(CONCAT(pkm_name, ' is hurt by its burn!'));
+    -- update sleep counter
     ELSEIF pkm_status='sleep' THEN
         UPDATE fighting_status 
             SET status_count = status_count - 1
             WHERE pkm_id=cur_pkm_id;
+    -- deal poison damage
     ELSEIF pkm_status='poison' THEN
         UPDATE fighting_status 
             SET hp = GREATEST(hp - GREATEST(FLOOR(max_hp/8), 1), 0)
             WHERE pkm_id=cur_pkm_id;
         CALL log_to_fight(CONCAT(pkm_name, ' is hurt by poison!'));
+    -- deal poison damage and update poison counter
     ELSEIF pkm_status='badly poison' THEN
         UPDATE fighting_status 
             SET hp = GREATEST(hp - GREATEST(FLOOR(max_hp*status_count/16), 1), 0),
@@ -161,6 +170,7 @@ BEGIN
             WHERE pkm_id=cur_pkm_id;
         CALL log_to_fight(CONCAT(pkm_name, ' is hurt by poison!'));
     END IF;
+    -- check fainted
     SELECT hp=0 INTO fainted
         FROM fighting_status
         WHERE pkm_id=cur_pkm_id;
@@ -169,6 +179,8 @@ BEGIN
     END IF;
 END $$
 
+-- handle everything happened in one turn
+-- the events order is listed below
 CREATE PROCEDURE one_turn(
     INOUT pkm_id_1 INTEGER,
     INOUT pkm_id_2 INTEGER,
@@ -209,8 +221,6 @@ ot: BEGIN
     DECLARE pkm_1_status_count INTEGER;
     DECLARE pkm_2_status_count INTEGER;
     DECLARE pkm_1_goes_first TINYINT DEFAULT 1;
-    /* DECLARE pkm_1_fainted TINYINT DEFAULT 0;
-    DECLARE pkm_2_fainted TINYINT DEFAULT 0; */
     
     SET pkm_1_fainted = 0;
     SET pkm_2_fainted = 0;
@@ -241,11 +251,13 @@ ot: BEGIN
     IF NOT ISNULL(move_id_1) AND NOT ISNULL(move_id_2) THEN
         SET pkm_1_goes_first = compare_speed(pkm_id_2, pkm_id_1, move_id_2, move_id_1);
     END IF;
-    -- first pkm use move
-    -- check paralysis
+
+    -- two pokemon use moves based on their speed
     IF pkm_1_goes_first=1 THEN
+        -- pokemon 1 use move
         IF NOT ISNULL(switch_pkm_id_1) THEN
             SELECT * FROM fighting_status WHERE 1=0; -- do nothing
+        -- check some status condition
         ELSEIF pkm_1_status='paralysis' AND RAND()<0.25 THEN
             CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'));
         ELSEIF pkm_1_status='freeze' THEN
@@ -253,16 +265,20 @@ ot: BEGIN
         ELSEIF pkm_1_status='sleep' THEN
             CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'));
         ELSE
+        -- use move
             CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, pkm_2_fainted);
         END IF;
+        -- check fainted
         IF pkm_2_fainted=1 AND allfainted(pkm_id_2)  THEN
             CALL log_to_fight(CONCAT(player_1_name,' wins!'));
             SET winner=1;
             LEAVE ot;
         ELSEIF pkm_2_fainted=0 AND ISNULL(switch_pkm_id_2) THEN
+        -- pokemon 2 use move
             SELECT status INTO pkm_2_status
                 FROM fighting_status
                 WHERE pkm_id=pkm_id_2;
+            -- check some status condition
             IF pkm_2_status='paralysis' AND RAND()<0.25 THEN
                 CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'));
             ELSEIF pkm_2_status='freeze' THEN
@@ -270,8 +286,10 @@ ot: BEGIN
             ELSEIF pkm_2_status='sleep' THEN
                 CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'));
             ELSE
+            -- use move
                 CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, pkm_1_fainted);
             END IF;
+            -- check fainted
             IF pkm_1_fainted=1 AND allfainted(pkm_id_1) THEN
                 CALL log_to_fight(CONCAT(player_2_name,' wins!'));
                 SET winner=2;
@@ -279,8 +297,10 @@ ot: BEGIN
             END IF;
         END IF;
     ELSE
+        -- pokemon 2 use move
         IF NOT ISNULL(switch_pkm_id_2) THEN 
             SELECT * FROM fighting_status WHERE 1=0; -- do nothing
+        -- check some status condition
         ELSEIF pkm_2_status='paralysis' AND RAND()<0.25 THEN
             CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'));
         ELSEIF pkm_2_status='freeze' THEN
@@ -288,16 +308,20 @@ ot: BEGIN
         ELSEIF pkm_2_status='sleep' THEN
             CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'));
         ELSE
+        -- use move
             CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, pkm_1_fainted);
         END IF;
+        -- check fainted
         IF pkm_1_fainted=1 AND allfainted(pkm_id_1)  THEN
             CALL log_to_fight(CONCAT(player_2_name,' wins!'));
             SET winner=2;
             LEAVE ot;
         ELSEIF pkm_1_fainted=0 AND ISNULL(switch_pkm_id_1) THEN
+        -- pokemon 1 use move
             SELECT status INTO pkm_1_status
                 FROM fighting_status
                 WHERE pkm_id=pkm_id_1;
+            -- check some status condition
             IF pkm_1_status='paralysis' AND RAND()<0.25 THEN
                 CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'));
             ELSEIF pkm_1_status='freeze' THEN
@@ -305,8 +329,10 @@ ot: BEGIN
             ELSEIF pkm_1_status='sleep' THEN
                 CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'));
             ELSE
+            -- use move
                 CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, pkm_2_fainted);
             END IF;
+            -- check fainted
             IF pkm_2_fainted=1 AND allfainted(pkm_id_2) THEN
                 CALL log_to_fight(CONCAT(player_1_name,' wins!'));
                 SET winner=1;
@@ -315,7 +341,7 @@ ot: BEGIN
         END IF;
     END IF;
 
-    -- burn / poison, random order
+    -- handle burn poison at random order
     IF RAND()<0.5 THEN
         IF pkm_1_fainted=0 THEN CALL check_status_case2(pkm_id_1, pkm_1_name, pkm_1_fainted); END IF;
         IF pkm_1_fainted=1 AND allfainted(pkm_id_1) THEN
@@ -345,7 +371,7 @@ ot: BEGIN
     END IF;
 END $$
 
--- procedure that executed when two trainer enter fight
+-- add team info into fighting_status
 CREATE PROCEDURE enter_fight (
     trainer_id_1 INTEGER,
     trainer_id_2 INTEGER

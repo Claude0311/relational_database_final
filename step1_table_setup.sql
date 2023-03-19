@@ -2,6 +2,7 @@
 DROP TRIGGER IF EXISTS trg_fight_insert;
 DROP TABLE IF EXISTS fighting_status;
 DROP TABLE IF EXISTS team;
+DROP TRIGGER IF EXISTS trigger_owns_delete;
 DROP TABLE IF EXISTS owns;
 DROP TABLE IF EXISTS trainer;
 DROP TABLE IF EXISTS fight_log;
@@ -14,6 +15,8 @@ DROP TABLE IF EXISTS movepool;
 DROP TABLE IF EXISTS type_chart;
 DROP TABLE IF EXISTS nature_table;
 
+-- pokedex table
+-- including pokemon's name, types, species strength
 CREATE TABLE pokedex (
     pkdex SMALLINT,
     pkm_name VARCHAR(20),
@@ -30,6 +33,8 @@ CREATE TABLE pokedex (
 );
 CREATE INDEX ele_type_index ON pokedex(ele_type_1, ele_type_2);
 
+-- movepool table
+-- include info needed to calculate damage and deal additional effect
 CREATE TABLE movepool (
     mv_id INTEGER AUTO_INCREMENT,
     move_name VARCHAR(20),
@@ -62,7 +67,7 @@ CREATE TABLE movepool (
 -- demage itself, heal itself, field, mist, constant damage(dragon rage)
 -- Metronome, One-Hit-KO
 
-
+-- indicate what species can learn which moves
 CREATE TABLE know (
     pkdex SMALLINT,
     mv_id INTEGER,
@@ -71,6 +76,7 @@ CREATE TABLE know (
     FOREIGN KEY (mv_id) REFERENCES movepool(mv_id)
 );
 
+-- indicate effectiveness between two types
 CREATE TABLE type_chart (
     atker VARCHAR(8),
     defer VARCHAR(8),
@@ -78,6 +84,7 @@ CREATE TABLE type_chart (
     PRIMARY KEY (atker, defer)
 );
 
+-- indicate each nature effect which stat
 CREATE TABLE nature_table (
     nature_id TINYINT,
     nature VARCHAR(7),
@@ -89,6 +96,8 @@ CREATE TABLE nature_table (
     PRIMARY KEY (nature_id)
 );
 
+-- store pokemon info
+-- including their species, nature, move, EVs, IVs
 CREATE TABLE pokemon (
     pkm_id INTEGER AUTO_INCREMENT,
     pkdex SMALLINT,
@@ -126,6 +135,7 @@ CREATE TABLE pokemon (
 );
 
 DELIMITER !
+-- when a pokemon is generated, some attribute are randomly determined if not given
 CREATE TRIGGER pkm_randomizer
 BEFORE INSERT
 ON pokemon
@@ -143,7 +153,7 @@ BEGIN
 END !
 DELIMITER ;
 
--- automatically generated from EVs, IVs, LV, Species strength 
+-- automatically generate a pokemon's stat from EVs, IVs, LV, species strength 
 CREATE VIEW pokemon_view AS 
     SELECT pkm_id, 
         pkm_name,
@@ -173,10 +183,29 @@ CREATE TABLE owns (
     PRIMARY KEY (trainer_id, pkm_id),
     FOREIGN KEY (trainer_id) REFERENCES trainer(trainer_id),
     FOREIGN KEY (pkm_id)     REFERENCES pokemon(pkm_id)
+        ON DELETE CASCADE
 );
 
+DELIMITER $$
+-- handle events if a trainer is deleted by admin
+CREATE TRIGGER trigger_trainer_delete BEFORE DELETE ON trainer
+FOR EACH ROW
+BEGIN
+    DELETE FROM owns WHERE trainer_id=OLD.trainer_id;
+END $$
+
+CREATE TRIGGER trigger_owns_delete AFTER DELETE ON owns
+FOR EACH ROW
+BEGIN
+    DELETE FROM pokemon WHERE pkm_id=OLD.pkm_id;
+END $$
+DELIMITER ;
+
+-- record the team that the trainer used to battle
+-- each trainer only have one team and 
+-- each pokemon must be owned by the trainer
 CREATE TABLE team (
-    trainer_id  INTEGER NOT NULL UNIQUE,
+    trainer_id  INTEGER,
     pkm_id_1    INTEGER NOT NULL,
     pkm_id_2    INTEGER,
     pkm_id_3    INTEGER,
@@ -184,16 +213,22 @@ CREATE TABLE team (
     pkm_id_5    INTEGER,
     pkm_id_6    INTEGER,
     PRIMARY KEY (trainer_id),
-    FOREIGN KEY (trainer_id, pkm_id_1) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_2) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_3) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_4) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_5) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_1) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_2) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_3) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_4) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_5) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
     FOREIGN KEY (trainer_id, pkm_id_6) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE
 );
 
--- It should be created when a battle degins,
--- and delete when battle ends
+-- Automatically created when a battle begins,
+-- and deleted when battle ends
 -- totally 12 rows
 CREATE TABLE fighting_status (
     trainer_id INTEGER NOT NULL,
@@ -203,14 +238,14 @@ CREATE TABLE fighting_status (
     hp         INTEGER,
     max_hp     INTEGER,
     -- health (NULL), burn, Freeze, Paralysis, Poison, Badly poisoned, sleep
-    status     VARCHAR(20) DEFAULT NULL,
     -- Badly poisoned 
         -- -n/16 hp very turn, reset when switch
     -- Sleep
         -- 2~5 turn (countdown), reset when switch
+    status     VARCHAR(20) DEFAULT NULL,
     status_count INTEGER DEFAULT NULL,
     sp_status   VARCHAR(20) DEFAULT NULL, -- confuse, attracted, ...
-    -- -6 ~ +6
+    -- stat will change because of moves, -6 ~ +6
     atk         TINYINT DEFAULT 0,
     def         TINYINT DEFAULT 0,
     spatk        TINYINT DEFAULT 0,
@@ -243,6 +278,9 @@ BEGIN
 END !
 DELIMITER ;
 
+-- battle logger
+-- deleted when battle ends
+-- retrived rows with is_new=1 when one turn ends and set is_new to 0
 CREATE TABLE fight_log (
     msg_ind INTEGER AUTO_INCREMENT,
     msg VARCHAR(100),
@@ -251,19 +289,3 @@ CREATE TABLE fight_log (
 );
 
 
-
-/* procedure fight
-check_speed()
-attack_first()
-additional_effect_first()
-attack_second()
-additional_effect_second()
-#poison, burn, ...
-process_status()
-
-procedure form_team
-choose_pkm
-set_move
-set_ability
-set_nature
-set_strength */
