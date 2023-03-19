@@ -25,6 +25,7 @@ Blue / blue123
 ```
 This is a 1v1 battle with only 1 UI, so we image two player sit in front of the same computer,
 take turns inputing commands
+For the optimal playing experience, it is recommended to use the full screen mode on your terminal.
 Run python app-client.py, which will allows you to build your own team and start battle
 
 
