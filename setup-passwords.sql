@@ -1,6 +1,6 @@
-DROP FUNCTION make_salt;
-DROP FUNCTION authenticate;
-DROP PROCEDURE sp_add_user;
+DROP FUNCTION IF EXISTS make_salt;
+DROP FUNCTION IF EXISTS authenticate;
+DROP PROCEDURE IF EXISTS sp_add_user;
 -- File for Password Management section of Final Project
 
 -- (Provided) This function generates a specified number of characters for using as a

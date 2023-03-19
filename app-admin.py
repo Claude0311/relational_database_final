@@ -53,8 +53,7 @@ def get_conn():
           # SHOW VARIABLES WHERE variable_name LIKE 'port';
           port='3306',  # this may change!
           password='adminpw',
-        #   database='pokedb' # replace this with your database name
-          database='final_project'
+          database='pokedb' # replace this with your database name
         )
         print('Successfully connected.')
         return conn
