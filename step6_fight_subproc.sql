@@ -212,11 +212,3 @@ um: BEGIN
 END $$
 
 DELIMITER ;
-
-/* CALL enter_fight(1,2);
-CALL use_move(1, 2, 56, @f);
-CALL use_move(2, 1, 58, @f);
-CALL use_move(1, 2, 86, @f);
-CALL use_move(2, 1, 435, @f);
-SELECT * FROM fight_log;
-SELECT * FROM fighting_status; */

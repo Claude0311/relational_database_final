@@ -258,26 +258,3 @@ BEGIN
 END !
 
 DELIMITER ;
--- TEST
-/* SELECT calculate_damage(1, 2, 56) AS Hydro_Pump,
-calculate_damage(1, 2, 58) AS Ice_Beam,
-calculate_damage(1, 2, 86) AS Thunder_Wave,
-calculate_damage(1, 2, 435) AS Discharge;
-
-UPDATE fighting_status SET
-    spatk = -6
-    WHERE pkm_id=1;
-
-UPDATE fighting_status SET
-    spdef = +6
-    WHERE pkm_id=2;
-
-SELECT move_effectiveness(1, 2, 56) AS Hydro_Pump,
-move_effectiveness(1, 2, 58) AS Ice_Beam,
-move_effectiveness(1, 2, 86) AS Thunder_Wave,
-move_effectiveness(1, 2, 435) AS Discharge;
-
-SELECT calculate_damage(1, 2, 56) AS Hydro_Pump,
-calculate_damage(1, 2, 58) AS Ice_Beam,
-calculate_damage(1, 2, 86) AS Thunder_Wave,
-calculate_damage(1, 2, 435) AS Discharge; */
