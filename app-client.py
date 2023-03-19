@@ -48,12 +48,11 @@ def get_conn():
     try:
         conn = mysql.connector.connect(
           host='localhost',
-        #   user='root',
-          user='jeff',
+          user='appclient',
           # Find port in MAMP or MySQL Workbench GUI or with
           # SHOW VARIABLES WHERE variable_name LIKE 'port';
           port='3306',  # this may change!
-        #   password='adminpw',
+          password='clientpw',
         #   database='pokedb' # replace this with your database name
           database='final_project'
         )
@@ -323,7 +322,7 @@ def get_player_info(player_name):
         trainer_id = None
         cursor = conn.cursor()
         sql = 'SELECT trainer_id, trainer_name \
-                FROM trainer LEFT JOIN team USING(trainer_id)\
+                FROM team LEFT JOIN trainer USING(trainer_id)\
                 WHERE trainer_name=\'%s\';'%player_name
         cursor.execute(sql)
         for row in cursor.fetchall():
@@ -653,6 +652,7 @@ def main():
         if winner in [0,1,2]:
             break
     quit_ui()
+
 
 if __name__ == '__main__':
     # This conn is a global object that other functions can access.

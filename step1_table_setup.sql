@@ -2,6 +2,7 @@
 DROP TRIGGER IF EXISTS trg_fight_insert;
 DROP TABLE IF EXISTS fighting_status;
 DROP TABLE IF EXISTS team;
+DROP TRIGGER IF EXISTS trigger_owns_delete;
 DROP TABLE IF EXISTS owns;
 DROP TABLE IF EXISTS trainer;
 DROP TABLE IF EXISTS fight_log;
@@ -171,7 +172,22 @@ CREATE TABLE owns (
     PRIMARY KEY (trainer_id, pkm_id),
     FOREIGN KEY (trainer_id) REFERENCES trainer(trainer_id),
     FOREIGN KEY (pkm_id)     REFERENCES pokemon(pkm_id)
+        ON DELETE CASCADE
 );
+
+DELIMITER $$
+CREATE TRIGGER trigger_trainer_delete BEFORE DELETE ON trainer
+FOR EACH ROW
+BEGIN
+    DELETE FROM owns WHERE trainer_id=OLD.trainer_id;
+END $$
+
+CREATE TRIGGER trigger_owns_delete AFTER DELETE ON owns
+FOR EACH ROW
+BEGIN
+    DELETE FROM pokemon WHERE pkm_id=OLD.pkm_id;
+END $$
+DELIMITER ;
 
 CREATE TABLE team (
     trainer_id  INTEGER NOT NULL UNIQUE,
@@ -182,12 +198,18 @@ CREATE TABLE team (
     pkm_id_5    INTEGER,
     pkm_id_6    INTEGER,
     PRIMARY KEY (trainer_id),
-    FOREIGN KEY (trainer_id, pkm_id_1) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_2) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_3) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_4) REFERENCES owns(trainer_id, pkm_id),
-    FOREIGN KEY (trainer_id, pkm_id_5) REFERENCES owns(trainer_id, pkm_id),
+    FOREIGN KEY (trainer_id, pkm_id_1) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_2) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_3) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_4) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (trainer_id, pkm_id_5) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE,
     FOREIGN KEY (trainer_id, pkm_id_6) REFERENCES owns(trainer_id, pkm_id)
+        ON DELETE CASCADE
 );
 
 -- It should be created when a battle degins,

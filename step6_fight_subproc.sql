@@ -176,7 +176,6 @@ um: BEGIN
                 WHERE pkm_id=def_id;
             IF fainted=1 THEN
                 CALL log_to_fight(CONCAT(defer_name, ' fainted!'));
-                LEAVE myloop;
             END IF;
         END IF;
 
@@ -186,6 +185,10 @@ um: BEGIN
             SET target_id = IF(move_target=1, def_id, atk_id);
             SET target_name = IF(move_target=1, defer_name, atker_name);
             CALL deal_effect(move_effect, target_id, target_name);
+        END IF;
+
+        IF fainted=1 THEN
+            LEAVE myloop;
         END IF;
     END WHILE;
 
