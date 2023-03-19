@@ -161,7 +161,9 @@ CREATE VIEW pokemon_view AS
 CREATE TABLE trainer (
     trainer_id      INTEGER NOT NULL AUTO_INCREMENT,
     trainer_name    VARCHAR(20) NOT NULL UNIQUE,
-    password        VARCHAR(20) NOT NULL,
+    -- Salt will be 8 characters all the time, so we can make this 8.
+    salt CHAR(8)    NOT NULL,
+    password_hash   BINARY(64) NOT NULL,
     PRIMARY KEY (trainer_id)
 );
 

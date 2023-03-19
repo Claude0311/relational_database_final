@@ -2,6 +2,7 @@ DROP FUNCTION IF EXISTS calculate_damage;
 DROP FUNCTION IF EXISTS move_effectiveness;
 DROP FUNCTION IF EXISTS stat_change;
 DROP FUNCTION IF EXISTS is_hit;
+DROP FUNCTION IF EXISTS compare_speed;
 
 DELIMITER !
 -- given stat from fight_status, calculate factor

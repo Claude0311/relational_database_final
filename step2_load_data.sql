@@ -19,6 +19,8 @@ DELETE FROM owns;
 DELETE FROM trainer;
 DELETE FROM pokemon;
 
+ALTER TABLE trainer AUTO_INCREMENT = 1;
+
 INSERT INTO pokemon (pkm_id, pkdex, mv_id_1, mv_id_2, mv_id_3, mv_id_4) VALUES
     (1,  18, 17, 98, 332, 28),      -- Blue's Pidgeot
     (2,  65, 94, 247, NULL, NULL), -- Blue's Alakazam
@@ -33,10 +35,8 @@ INSERT INTO pokemon (pkm_id, pkdex, mv_id_1, mv_id_2, mv_id_3, mv_id_4) VALUES
     (11,448, 396, 406, 94, NULL),   -- Cynthia's Lucario
     (12,445, 280, 53, 242, NULL);   -- Cynthia's Garchomp
 
-
-INSERT INTO trainer VALUES
-    (1, 'Blue', 'blue123'),
-    (2, 'Cynthia', 'cyn321');
+CALL sp_add_user('Blue', 'blue123');
+CALL sp_add_user('Cynthia', 'cyn321');
 
 INSERT INTO owns VALUES 
     (1, 1),

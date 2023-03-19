@@ -48,13 +48,13 @@ def get_conn():
     try:
         conn = mysql.connector.connect(
           host='localhost',
-        #   user='root',
+          #user='root',
           user='jeff',
           # Find port in MAMP or MySQL Workbench GUI or with
           # SHOW VARIABLES WHERE variable_name LIKE 'port';
           port='3306',  # this may change!
-        #   password='adminpw',
-        #   database='pokedb' # replace this with your database name
+          #password='',
+          #database='pokedb' # replace this with your database name
           database='final_project'
         )
         print('Successfully connected.')
@@ -514,6 +514,18 @@ def quit_ui():
     print('Good bye!')
     exit()
 
+def get_auth(username, password):
+    try:
+        cursor = conn.cursor()
+        cursor.execute('SELECT authenticate(%s,%s)', (username, password))
+        auth = cursor.fetchone()  
+    except mysql.connector.Error as e:
+        print(e)
+        sleep(1)
+    finally:
+        cursor.close()
+        return auth
+
 def player_login():
     global player_1
     global player_2
@@ -521,10 +533,13 @@ def player_login():
     global player_2_name
     while True:
         player_1_name = input('player 1 login: ')
+        player_1_pass = input('player 1 password: ')
         try:
-            # change to CHECK password later
+            # Authenticate username and password for player 1
             player_1, player_1_name = get_player_info(player_1_name)
             if player_1==None: raise Exception('trainer not found')
+            auth = get_auth(player_1_name, player_1_pass)
+            if auth == 0: raise Exception('incorrect password')
             break
         except:
             print('invalid input')
@@ -532,29 +547,50 @@ def player_login():
     while True:
         print(player_2_offset, end='')
         player_2_name = input('player 2 login: ')
+        player_2_pass = input('player 2 password: ')
         try:
-            # change to CHECK password later
+            # Authenticate username and password for player 2
             if player_2_name == player_1_name: raise Exception('trainer duplicate')
             player_2, player_2_name = get_player_info(player_2_name)
             if player_2==None: raise Exception('trainer not found')
+            auth = get_auth(player_2_name, player_2_pass)
+            if auth == 0: raise Exception('incorrect password')
             break
         except:
             print(player_2_offset, end='')
             print('invalid input')
             continue
 
+def get_id():
+    try:
+        cursor = conn.cursor()
+        cursor.execute('SELECT LAST_INSERT_ID()')
+        id = cursor.fetchone()  
+    except mysql.connector.Error as e:
+        print(e)
+        sleep(1)
+    finally:
+        cursor.close()
+        return id[0]
+
 def create_pokemon(pkdex):
     try:
         cursor = conn.cursor()
         cursor.execute('SELECT mv_id, move_name FROM pokedex NATURAL JOIN know NATURAL JOIN movepool WHERE pkdex = %s;', (pkdex,))
         move_list = cursor.fetchall()
+        valid_move_ids = [move[0] for move in move_list]
         data_pokemon = [pkdex]
         # User chooses 4 moves for pokemon
         for i in range(4):
             os.system('cls')
             for move in move_list:
                 print('{}: {}'.format(move[0], move[1]))
-            move_choice = int(input('Move {}: Choose a move (by id)\n'.format(i+1)))
+            while True:
+                move_choice = int(input('Move {}: Choose a move (by id)\n'.format(i+1)))
+                if move_choice not in valid_move_ids:
+                    print('Invalid Move Id. Try Again.')
+                else:
+                    break
             data_pokemon.append(move_choice)
         # Sets effort values for pokemon
         while True:
@@ -589,26 +625,36 @@ def create_trainer():
         # Create username and password
         trainer_name = input('Set trainer name: ')
         password = input('Set password: ')
-        add_trainer = ('INSERT INTO trainer '
-                    '(trainer_name, password) '
-                    'VALUES (%s, %s)')
+        add_trainer = ('CALL sp_add_user(%s,%s)')
         data_trainer = (trainer_name, password)
         # Add username and password to database
         cursor.execute(add_trainer, data_trainer)
-        trainer_id = cursor.lastrowid
         conn.commit()
+        trainer_id = get_id()
+        print(trainer_id)
         # Show list of pokemon
         cursor.execute('SELECT pkdex, pkm_name FROM pokedex')
         pk_list = cursor.fetchall()
+        valid_pk_id = [pk[0] for pk in pk_list]
         data_team = [None]*7
         data_team[0] = trainer_id
-        pk_num = int(input('How many pokemon on your team? (<=6): '))
+        while True:
+            pk_num = int(input('How many pokemon on your team? (<=6): '))
+            if not (1 <= pk_num <= 6):
+                print('Invalid number of Pokemon. Try again.')
+            else:
+                break
         # User creates their team of desired pokemon
         for i in range(pk_num):
             os.system('cls')
             for pk in pk_list:
                 print('{}: {}'.format(pk[0], pk[1]))
-            pkdex = int(input('Pokemon {}: Which pokemon would you like to add? (by id)\n'.format(i+1)))
+            while True:
+                pkdex = int(input('Pokemon {}: Which pokemon would you like to add? (by id)\n'.format(i+1)))
+                if pkdex not in valid_pk_id:
+                    print('Invalid Pokemon Id. Try Again.')
+                else:
+                    break
             pkm_id = create_pokemon(pkdex)
             data_team[i+1] = pkm_id
             add_owns = ('INSERT INTO owns '
