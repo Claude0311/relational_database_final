@@ -1,6 +1,6 @@
 """
-Student name(s): Jeff Chen
-Student email(s): cchen8@caltech.edu
+Student name(s): Jeff Chen, Joshua Flashner
+Student email(s): cchen8@caltech.edu, jflashne@caltech.edu
 TODO: High-level program overview
 
 ******************************************************************************
@@ -48,7 +48,6 @@ def get_conn():
     try:
         conn = mysql.connector.connect(
           host='localhost',
-<<<<<<< HEAD:app-template.py
           #user='root',
           user='jeff',
           # Find port in MAMP or MySQL Workbench GUI or with
@@ -56,14 +55,6 @@ def get_conn():
           port='3306',  # this may change!
           #password='',
           #database='pokedb' # replace this with your database name
-=======
-          user='appclient',
-          # Find port in MAMP or MySQL Workbench GUI or with
-          # SHOW VARIABLES WHERE variable_name LIKE 'port';
-          port='3306',  # this may change!
-          password='clientpw',
-        #   database='pokedb' # replace this with your database name
->>>>>>> main:app-client.py
           database='final_project'
         )
         print('Successfully connected.')
