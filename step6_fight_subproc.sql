@@ -23,6 +23,7 @@ BEGIN
     DECLARE inc TINYINT;
     DECLARE inc_description VARCHAR(20);
 
+    -- log status condition
     IF move_effect = 'burn' THEN SET description=' is burnt';
     ELSEIF move_effect = 'freeze' THEN SET description=' is frozen';
     ELSEIF move_effect = 'paralysis' THEN SET description=' is paralyzed';
@@ -30,6 +31,7 @@ BEGIN
     ELSEIF move_effect = 'badly poison' THEN SET description=' is badly poisoned';
     ELSEIF move_effect = 'sleep' THEN SET description=' falls asleep';
     ELSE
+    -- log stat change
         SET stat = substring_index(move_effect,' ',1);
         IF stat='atk' THEN SET stat='attack';
         ELSEIF stat='def' THEN SET stat='defense';
@@ -69,7 +71,9 @@ BEGIN
 
     SET handle_badpoison = (target_cur_status='poison' AND move_effect in ('poison', 'badly poison')) OR (ISNULL(target_cur_status) AND move_effect = 'badly poison');
 
+    -- Handle status conditional
     IF (ISNULL(target_cur_status) AND move_effect in ('burn', 'freeze', 'paralysis', 'poison', 'sleep')) OR handle_badpoison THEN
+        -- badly poison will have increasing damage based on status_count 
         IF handle_badpoison THEN
             SET move_effect = 'badly poison';
             UPDATE fighting_status SET
@@ -77,13 +81,14 @@ BEGIN
                 status_count = 1
                 WHERE pkm_id=target_id;
 
+        -- sleep 2~5 turn
         ELSEIF move_effect = 'sleep' THEN
-            -- sleep 2~5 turn
             UPDATE fighting_status SET
                 status = move_effect,
                 status_count = 2 + FLOOR(RAND()*4)
                 WHERE pkm_id=target_id;
 
+        -- other status condition
         ELSE
             UPDATE fighting_status SET
                 status = move_effect
@@ -94,6 +99,8 @@ BEGIN
 
     END IF;
     
+    -- Handle stat change, input will be like the form "atk +2" or "spdef -3"
+    -- stat should be between -6 to +6
     IF move_effect LIKE '% +%' OR move_effect LIKE '% -%' THEN
         SET inc = cast(substring_index(move_effect,' ',-1) AS SIGNED );
         UPDATE fighting_status SET
@@ -110,6 +117,8 @@ BEGIN
     END IF;
 END $$
 
+-- given attacker and defender and move
+-- deal damage and handle move's additional effect
 CREATE procedure use_move (
     IN atk_id INTEGER,
     IN def_id INTEGER,
@@ -134,6 +143,7 @@ um: BEGIN
 
     SET fainted=0;
 
+    -- get move's info
     SELECT category, move_name, effect_target, effect, prob, min_times + FLOOR(RAND()*(max_times-min_times+1))
     INTO cur_category, cur_mv_name, move_target, move_effect, effect_prob, move_select_hit_time
         FROM movepool
@@ -150,6 +160,7 @@ um: BEGIN
     
     SET effectiveness = move_effectiveness(NULL, def_id, move_id);
     
+    -- if effectiveness is zero, then move fail
     IF effectiveness = 0.0 THEN
         CALL log_to_fight('But, it failed!');
         LEAVE um;
@@ -161,6 +172,8 @@ um: BEGIN
         END IF;
     END IF;
 
+    -- handle moves that hit multiple times
+    -- most moves will just hit one time
     myloop: WHILE move_hit_time < move_select_hit_time DO
         SET move_hit_time = move_hit_time + 1;
         IF cur_category!='status' THEN
@@ -179,9 +192,9 @@ um: BEGIN
             END IF;
         END IF;
 
+        -- handle additional effect with certain probability
         IF NOT(fainted=1 AND move_target=1) AND RAND()*100<=effect_prob THEN
-            -- additional effect triggered
-            -- set addition effect's target
+            -- set addition effect's target and deal effect
             SET target_id = IF(move_target=1, def_id, atk_id);
             SET target_name = IF(move_target=1, defer_name, atker_name);
             CALL deal_effect(move_effect, target_id, target_name);
