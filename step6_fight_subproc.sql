@@ -161,15 +161,9 @@ um: BEGIN
     SET effectiveness = move_effectiveness(NULL, def_id, move_id);
     
     -- if effectiveness is zero, then move fail
-    IF effectiveness = 0.0 THEN
+    IF effectiveness = 0.0 AND (cur_category!='status' OR move_target=1) THEN
         CALL log_to_fight('But, it failed!');
         LEAVE um;
-    ELSEIF cur_category!='status' THEN
-        IF effectiveness < 1.0 THEN
-            CALL log_to_fight('It\'s not very effective...');
-        ELSEIF effectiveness > 1.0 THEN
-            CALL log_to_fight('It\'s super effective!');
-        END IF;
     END IF;
 
     -- handle moves that hit multiple times
@@ -182,6 +176,9 @@ um: BEGIN
             UPDATE fighting_status SET
                 hp = GREATEST(hp - damage, 0)
                 WHERE pkm_id=def_id;
+
+            -- publish damage
+            CALL log_to_fight('');
 
             -- check fainted
             SELECT hp=0 INTO fainted
@@ -204,6 +201,12 @@ um: BEGIN
             LEAVE myloop;
         END IF;
     END WHILE;
+
+    IF effectiveness < 1.0 AND cur_category!='status' THEN
+        CALL log_to_fight('It\'s not very effective...');
+    ELSEIF effectiveness > 1.0 AND cur_category!='status' THEN
+        CALL log_to_fight('It\'s super effective!');
+    END IF;
 
     IF move_select_hit_time>1 THEN
         CALL log_to_fight(CONCAT('HIT ',move_hit_time,' times!'));

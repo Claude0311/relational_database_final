@@ -399,6 +399,12 @@ BEGIN
             SET tmp_trainer_id = trainer_id_2;
         END IF;
 
+        SELECT trainer_name INTO tmp_trainer_name
+            FROM trainer
+            WHERE trainer_id=tmp_trainer_id;
+
+        CALL log_to_fight(CONCAT(tmp_trainer_name, ' enter battle!'));
+
         SELECT 
             pkm_id_1,
             pkm_id_2,
@@ -424,15 +430,10 @@ BEGIN
             (tmp_trainer_id, tmp_pkm_id_5, 0),
             (tmp_trainer_id, tmp_pkm_id_6, 0);
 
-        SELECT trainer_name INTO tmp_trainer_name
-            FROM trainer
-            WHERE trainer_id=tmp_trainer_id;
-
         SELECT pkm_name INTO first_pkm_name
             FROM pokemon NATURAL JOIN pokedex
             WHERE pkm_id=tmp_pkm_id_1;
-        
-        CALL log_to_fight(CONCAT(tmp_trainer_name, ' enter battle!'));
+
         CALL log_to_fight(CONCAT(tmp_trainer_name, ' send out ', first_pkm_name));
         
     END WHILE;
