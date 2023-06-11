@@ -22,13 +22,13 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 33,tackle,normal,35,0,physical,40,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 34,body-slam,normal,15,0,physical,85,100,30,paralysis,has a $effect_chance% chance to paralysis the target.,1,1,1
 39,tail-whip,normal,30,0,status,NULL,100,100,def -1,lowers the target's defense by one stage.,1,1,1
-40,poison-sting,posion,35,0,physical,15,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
+40,poison-sting,poison,35,0,physical,15,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
 41,twineedle,bug,20,0,physical,25,100,20,poison,hits twice in the same turn.  has a $effect_chance% chance to poison the target.,1,2,2
 42,pin-missile,bug,20,0,physical,25,95,NULL,NULL,hits 2-5 times in one turn.,1,2,5
 43,leer,normal,30,0,status,NULL,100,100,def -1,lowers the target's defense by one stage.,1,1,1
 45,growl,normal,40,0,status,NULL,100,100,atk -1,lowers the target's attack by one stage.,1,1,1
 47,sing,normal,15,0,status,NULL,55,100,sleep,puts the target to sleep.,1,1,1
-51,acid,posion,30,0,special,40,100,10,spdef -1,has a $effect_chance% chance to lower the target's special defense by one stage.,1,1,1
+51,acid,poison,30,0,special,40,100,10,spdef -1,has a $effect_chance% chance to lower the target's special defense by one stage.,1,1,1
 52,ember,fire,25,0,special,40,100,10,burn,has a $effect_chance% chance to burn the target.,1,1,1
 53,flamethrower,fire,15,0,special,90,100,10,burn,has a $effect_chance% chance to burn the target.,1,1,1
 55,water-gun,water,25,0,special,40,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
@@ -41,7 +41,7 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 65,drill-peck,flying,20,0,physical,80,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 70,strength,normal,15,0,physical,80,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 74,growth,normal,20,0,status,NULL,NULL,100,spatk +1,raises the user's attack and special attack by one stage.,0,1,1
-77,poison-powder,posion,35,0,status,NULL,75,100,poison,poisons the target.,1,1,1
+77,poison-powder,poison,35,0,status,NULL,75,100,poison,poisons the target.,1,1,1
 78,stun-spore,grass,30,0,status,NULL,75,100,paralysis,paralyzes the target.,1,1,1
 79,sleep-powder,grass,15,0,status,NULL,75,100,sleep,puts the target to sleep.,1,1,1
 81,string-shot,bug,40,0,status,NULL,95,100,spd -2,lowers the target's speed by two stages.,1,1,1
@@ -50,7 +50,7 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 86,thunder-wave,electric,20,0,status,NULL,90,100,paralysis,paralyzes the target.,1,1,1
 87,thunder,electric,10,0,special,110,70,30,paralysis,has a $effect_chance% chance to paralyze the target.,1,1,1
 88,rock-throw,rock,15,0,physical,50,90,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
-92,toxic,posion,10,0,status,NULL,90,100,badly poison,"badly poisons the target, inflicting more damage every turn.",1,1,1
+92,toxic,poison,10,0,status,NULL,90,100,badly poison,"badly poisons the target, inflicting more damage every turn.",1,1,1
 94,psychic,psychic,10,0,special,90,100,10,spdef -1,has a $effect_chance% chance to lower the target's special defense by one stage.,1,1,1
 95,hypnosis,psychic,20,0,status,NULL,60,100,sleep,puts the target to sleep.,1,1,1
 96,meditate,psychic,40,0,status,NULL,NULL,100,atk +1,raises the user's attack by one stage.,0,1,1
@@ -66,8 +66,8 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 112,barrier,psychic,20,0,status,NULL,NULL,100,def +2,raises the user's defense by two stages.,0,1,1
 121,egg-bomb,normal,10,0,physical,100,75,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 122,lick,ghost,30,0,physical,30,100,30,paralysis,has a $effect_chance% chance to paralysis the target.,1,1,1
-123,smog,posion,20,0,special,30,70,40,poison,has a $effect_chance% chance to poison the target.,1,1,1
-124,sludge,posion,20,0,special,65,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
+123,smog,poison,20,0,special,30,70,40,poison,has a $effect_chance% chance to poison the target.,1,1,1
+124,sludge,poison,20,0,special,65,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
 126,fire-blast,fire,5,0,special,110,85,10,burn,has a $effect_chance% chance to burn the target.,1,1,1
 129,swift,normal,20,0,special,60,NULL,NULL,NULL,never misses.,1,1,1
 131,spike-cannon,normal,15,0,physical,20,100,NULL,NULL,hits 2-5 times in one turn.,1,2,5
@@ -75,14 +75,14 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 133,amnesia,psychic,20,0,status,NULL,NULL,100,spdef +2,raises the user's special defense by two stages.,0,1,1
 134,kinesis,psychic,15,0,status,NULL,80,100,acc -1,lowers the target's accuracy by one stage.,1,1,1
 137,glare,normal,30,0,status,NULL,100,100,paralysis,paralyzes the target.,1,1,1
-139,poison-gas,posion,40,0,status,NULL,90,100,poison,poisons the target.,1,1,1
+139,poison-gas,poison,40,0,status,NULL,90,100,poison,poisons the target.,1,1,1
 140,barrage,normal,20,0,physical,15,85,NULL,NULL,hits 2-5 times in one turn.,1,2,5
 142,lovely-kiss,normal,10,0,status,NULL,75,100,sleep,puts the target to sleep.,1,1,1
 145,bubble,water,30,0,special,40,100,10,spd -1,has a $effect_chance% chance to lower the target's speed by one stage.,1,1,1
 147,spore,grass,15,0,status,NULL,100,100,sleep,puts the target to sleep.,1,1,1
 148,flash,normal,20,0,status,NULL,100,100,acc -1,lowers the target's accuracy by one stage.,1,1,1
 150,splash,normal,40,0,status,NULL,NULL,NULL,NULL,does nothing.,0,1,1
-151,acid-armor,posion,20,0,status,NULL,NULL,100,def +2,raises the user's defense by two stages.,0,1,1
+151,acid-armor,poison,20,0,status,NULL,NULL,100,def +2,raises the user's defense by two stages.,0,1,1
 154,fury-swipes,normal,15,0,physical,18,80,NULL,NULL,hits 2-5 times in one turn.,1,2,5
 155,bonemerang,ground,10,0,physical,50,90,NULL,NULL,hits twice in one turn.,1,2,2
 159,sharpen,normal,30,0,status,NULL,NULL,100,atk +1,raises the user's attack by one stage.,0,1,1
@@ -92,7 +92,7 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 183,mach-punch,fighting,30,1,physical,40,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 184,scary-face,normal,10,0,status,NULL,100,100,spd -2,lowers the target's speed by two stages.,1,1,1
 185,feint-attack,dark,20,0,physical,60,NULL,NULL,NULL,never misses.,1,1,1
-188,sludge-bomb,posion,10,0,special,90,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
+188,sludge-bomb,poison,10,0,special,90,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
 189,mud-slap,ground,10,0,special,20,100,100,acc -1,has a $effect_chance% chance to lower the target's accuracy by one stage.,1,1,1
 190,octazooka,water,10,0,special,65,85,50,acc -1,has a $effect_chance% chance to lower the target's accuracy by one stage.,1,1,1
 192,zap-cannon,electric,5,0,special,120,50,100,paralysis,has a $effect_chance% chance to paralysis the target.,1,1,1
@@ -127,7 +127,7 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 297,feather-dance,flying,15,0,status,NULL,100,100,atk -2,lowers the target's attack by two stages.,1,1,1
 299,blaze-kick,fire,10,0,physical,85,90,10,burn,has $effect_chance% chance to burn the target.,1,1,1
 304,hyper-voice,normal,10,0,special,90,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
-305,poison-fang,posion,15,0,physical,50,100,50,badly poison,has a $effect_chance% chance to badly poison the target.,1,1,1
+305,poison-fang,poison,15,0,physical,50,100,50,badly poison,has a $effect_chance% chance to badly poison the target.,1,1,1
 306,crush-claw,normal,10,0,physical,75,95,50,def -1,has a $effect_chance% chance to lower the target's defense by one stage.,1,1,1
 309,meteor-mash,steel,10,0,physical,90,90,20,atk +1,has a $effect_chance% chance to raise the user's attack by one stage.,0,1,1
 311,weather-ball,normal,10,0,special,50,100,NULL,NULL,"if there be weather, this move has doubled power and the weather's type.",1,1,1
@@ -145,7 +145,7 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 334,iron-defense,steel,15,0,status,NULL,NULL,100,def +2,raises the user's defense by two stages.,0,1,1
 337,dragon-claw,dragon,15,0,physical,80,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 341,mud-shot,ground,15,0,special,55,95,100,spd -1,has a $effect_chance% chance to lower the target's speed by one stage.,1,1,1
-342,poison-tail,posion,25,0,physical,50,100,10,poison,has $effect_chance% chance to poison the target.,1,1,1
+342,poison-tail,poison,25,0,physical,50,100,10,poison,has $effect_chance% chance to poison the target.,1,1,1
 345,magical-leaf,grass,20,0,special,60,NULL,NULL,NULL,never misses.,1,1,1
 350,rock-blast,rock,10,0,physical,25,90,NULL,NULL,hits 2-5 times in one turn.,1,2,5
 351,shock-wave,electric,20,0,special,60,NULL,NULL,NULL,never misses.,1,1,1
@@ -155,7 +155,7 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 395,force-palm,fighting,10,0,physical,60,100,30,paralysis,has a $effect_chance% chance to paralysis the target.,1,1,1
 396,aura-sphere,fighting,20,0,special,80,NULL,NULL,NULL,never misses.,1,1,1
 397,rock-polish,rock,20,0,status,NULL,NULL,100,spd +2,raises the user's speed by two stages.,0,1,1
-398,poison-jab,posion,20,0,physical,80,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
+398,poison-jab,poison,20,0,physical,80,100,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
 401,aqua-tail,water,10,0,physical,90,90,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 402,seed-bomb,grass,15,0,physical,80,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
 404,x-scissor,bug,15,0,physical,80,100,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
@@ -180,8 +180,8 @@ mv_id,move_name,ele_type,pp,priority,category,atk,accuracy,prob,effect,descripti
 434,draco-meteor,dragon,5,0,special,130,90,100,spatk -2,lowers the user's special attack by two stages after inflicting damage.,0,1,1
 437,leaf-storm,grass,5,0,special,130,90,100,spatk -2,lowers the user's special attack by two stages after inflicting damage.,0,1,1
 438,power-whip,grass,10,0,physical,120,85,NULL,NULL,inflicts regular damage with no additional effect.,1,1,1
-440,cross-poison,posion,20,0,physical,70,100,10,poison,has a $effect_chance% chance to poison the target.,1,1,1
-441,gunk-shot,posion,5,0,physical,120,80,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
+440,cross-poison,poison,20,0,physical,70,100,10,poison,has a $effect_chance% chance to poison the target.,1,1,1
+441,gunk-shot,poison,5,0,physical,120,80,30,poison,has a $effect_chance% chance to poison the target.,1,1,1
 443,magnet-bomb,steel,20,0,physical,60,NULL,NULL,NULL,never misses.,1,1,1
 449,judgment,normal,10,0,special,100,100,NULL,NULL,"if the user is holding a appropriate plate or drive, the damage inflicted will match it.",1,1,1
 450,bug-bite,bug,20,0,physical,60,100,NULL,NULL,"if target has a berry, inflicts double damage and uses the berry.",1,1,1

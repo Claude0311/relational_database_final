@@ -15,20 +15,21 @@ CREATE PROCEDURE handle_surrender(
     IN player_2_surrender TINYINT,
     IN player_1_name VARCHAR(20),
     IN player_2_name VARCHAR(20),
+    IN mygameroom VARCHAR(100),
     OUT winner TINYINT
 )
 BEGIN
     -- Both player surrender
     IF player_1_surrender=1 AND player_2_surrender=1 THEN
-        CALL log_to_fight('Both player surrender');
+        CALL log_to_fight('Both player surrender', mygameroom);
         SET winner = 0;
     ELSE
         -- one of the player surrender
         IF player_1_surrender=1 THEN
-            CALL log_to_fight(CONCAT(player_1_name, ' surrenders, ', player_2_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_1_name, ' surrenders, ', player_2_name,' wins!'), mygameroom);
             SET winner = 2;
         ELSEIF player_2_surrender=1 THEN
-            CALL log_to_fight(CONCAT(player_2_name, ' surrenders, ', player_1_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_2_name, ' surrenders, ', player_1_name,' wins!'), mygameroom);
             SET winner = 1;
         ELSE
             SET winner = NULL;
@@ -41,6 +42,7 @@ CREATE PROCEDURE handle_switch(
     INOUT cur_pkm_id INTEGER,
     IN switch_pkm_id INTEGER,
     IN player_name VARCHAR(20),
+    IN mygameroom VARCHAR(100),
     OUT cur_pkm_name VARCHAR(20)
 )
 BEGIN
@@ -58,7 +60,7 @@ BEGIN
             SET choosen=1
             WHERE pkm_id=switch_pkm_id;
         SET cur_pkm_id=switch_pkm_id;
-        CALL log_to_fight(CONCAT(player_name, ' switches to ', cur_pkm_name));
+        CALL log_to_fight(CONCAT(player_name, ' switches to ', cur_pkm_name), mygameroom);
     -- don't switch
     ELSE
         SELECT pkm_name INTO cur_pkm_name 
@@ -92,6 +94,7 @@ CREATE PROCEDURE check_status_case1(
     IN cur_pkm_id INTEGER,
     IN pkm_name VARCHAR(20),
     IN switch_pkm_id INTEGER,
+    IN mygameroom VARCHAR(100),
     OUT pkm_status VARCHAR(20),
     OUT pkm_status_count INTEGER
 )
@@ -118,7 +121,7 @@ BEGIN
             WHERE pkm_id=cur_pkm_id;
         SET pkm_status=NULL;
         SET pkm_status_count=NULL;
-        CALL log_to_fight(CONCAT(pkm_name,' wakes up!'));
+        CALL log_to_fight(CONCAT(pkm_name,' wakes up!'), mygameroom);
     -- check 20% chance unfreeze
     ELSEIF pkm_status='freeze' AND RAND()<0.2 THEN
         UPDATE fighting_status 
@@ -126,7 +129,7 @@ BEGIN
             WHERE pkm_id=cur_pkm_id;
         SET pkm_status=NULL;
         SET pkm_status_count=NULL;
-        CALL log_to_fight(CONCAT(pkm_name,' unfreeze!'));
+        CALL log_to_fight(CONCAT(pkm_name,' unfreeze!'), mygameroom);
     END IF;
 END $$
 
@@ -134,6 +137,7 @@ END $$
 CREATE PROCEDURE check_status_case2(
     IN cur_pkm_id INTEGER,
     IN pkm_name VARCHAR(50),
+    IN mygameroom VARCHAR(100),
     OUT fainted TINYINT
 )
 BEGIN
@@ -150,7 +154,7 @@ BEGIN
         UPDATE fighting_status 
             SET hp = GREATEST(hp - GREATEST(FLOOR(max_hp/16), 1), 0)
             WHERE pkm_id=cur_pkm_id;
-        CALL log_to_fight(CONCAT(pkm_name, ' is hurt by its burn!'));
+        CALL log_to_fight(CONCAT(pkm_name, ' is hurt by its burn!'), mygameroom);
     -- update sleep counter
     ELSEIF pkm_status='sleep' THEN
         UPDATE fighting_status 
@@ -161,21 +165,21 @@ BEGIN
         UPDATE fighting_status 
             SET hp = GREATEST(hp - GREATEST(FLOOR(max_hp/8), 1), 0)
             WHERE pkm_id=cur_pkm_id;
-        CALL log_to_fight(CONCAT(pkm_name, ' is hurt by poison!'));
+        CALL log_to_fight(CONCAT(pkm_name, ' is hurt by poison!'), mygameroom);
     -- deal poison damage and update poison counter
     ELSEIF pkm_status='badly poison' THEN
         UPDATE fighting_status 
             SET hp = GREATEST(hp - GREATEST(FLOOR(max_hp*status_count/16), 1), 0),
                 status_count = LEAST(status_count+1, 15)
             WHERE pkm_id=cur_pkm_id;
-        CALL log_to_fight(CONCAT(pkm_name, ' is hurt by poison!'));
+        CALL log_to_fight(CONCAT(pkm_name, ' is hurt by poison!'), mygameroom);
     END IF;
     -- check fainted
     SELECT hp=0 INTO fainted
         FROM fighting_status
         WHERE pkm_id=cur_pkm_id;
     IF fainted THEN 
-        CALL log_to_fight(CONCAT(pkm_name, ' fainted!'));
+        CALL log_to_fight(CONCAT(pkm_name, ' fainted!'), mygameroom);
     END IF;
 END $$
 
@@ -188,6 +192,7 @@ CREATE PROCEDURE one_turn(
     IN move_id_2 INTEGER,
     IN switch_pkm_id_1 INTEGER,
     IN switch_pkm_id_2 INTEGER,
+    IN mygameroom VARCHAR(100),
     -- NULL: game not over yet
     -- 0: tie
     -- 1: player 1 win
@@ -224,7 +229,7 @@ ot: BEGIN
     
     SET pkm_1_fainted = 0;
     SET pkm_2_fainted = 0;
-    UPDATE fight_log SET isnew=0;
+    UPDATE fight_log SET isnew=0 WHERE gameroom=mygameroom AND isnew=1;
     SET winner = NULL;
 
     -- check surrender (mv_id and switch are NULL)
@@ -236,16 +241,16 @@ ot: BEGIN
     SELECT trainer_name INTO player_2_name
     FROM owns NATURAL JOIN trainer
     WHERE pkm_id=pkm_id_2;
-    CALL handle_surrender(player_1_surrender, player_2_surrender, player_1_name, player_2_name, winner);
+    CALL handle_surrender(player_1_surrender, player_2_surrender, player_1_name, player_2_name, mygameroom, winner);
     IF NOT ISNULL(winner) THEN LEAVE ot; END IF;
 
     -- switch pkm
-    CALL handle_switch(pkm_id_1, switch_pkm_id_1, player_1_name, pkm_1_name);
-    CALL handle_switch(pkm_id_2, switch_pkm_id_2, player_2_name, pkm_2_name);
+    CALL handle_switch(pkm_id_1, switch_pkm_id_1, player_1_name, mygameroom, pkm_1_name);
+    CALL handle_switch(pkm_id_2, switch_pkm_id_2, player_2_name, mygameroom, pkm_2_name);
 
     -- sleep/freeze (wake up / unfroze)
-    CALL check_status_case1(pkm_id_1, pkm_1_name, switch_pkm_id_1, pkm_1_status, pkm_1_status_count);
-    CALL check_status_case1(pkm_id_2, pkm_2_name, switch_pkm_id_2, pkm_2_status, pkm_2_status_count);
+    CALL check_status_case1(pkm_id_1, pkm_1_name, switch_pkm_id_1, mygameroom, pkm_1_status, pkm_1_status_count);
+    CALL check_status_case1(pkm_id_2, pkm_2_name, switch_pkm_id_2, mygameroom, pkm_2_status, pkm_2_status_count);
 
     -- compare speed
     IF NOT ISNULL(move_id_1) AND NOT ISNULL(move_id_2) THEN
@@ -259,18 +264,18 @@ ot: BEGIN
             SELECT * FROM fighting_status WHERE 1=0; -- do nothing
         -- check some status condition
         ELSEIF pkm_1_status='paralysis' AND RAND()<0.25 THEN
-            CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'));
+            CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'), mygameroom);
         ELSEIF pkm_1_status='freeze' THEN
-            CALL log_to_fight(CONCAT(pkm_1_name, 'is frozen. It can\'t move!'));
+            CALL log_to_fight(CONCAT(pkm_1_name, 'is frozen. It can\'t move!'), mygameroom);
         ELSEIF pkm_1_status='sleep' THEN
-            CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'));
+            CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'), mygameroom);
         ELSE
         -- use move
-            CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, pkm_2_fainted);
+            CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, mygameroom, pkm_2_fainted);
         END IF;
         -- check fainted
         IF pkm_2_fainted=1 AND allfainted(pkm_id_2)  THEN
-            CALL log_to_fight(CONCAT(player_1_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_1_name,' wins!'), mygameroom);
             SET winner=1;
             LEAVE ot;
         ELSEIF pkm_2_fainted=0 AND ISNULL(switch_pkm_id_2) THEN
@@ -280,18 +285,18 @@ ot: BEGIN
                 WHERE pkm_id=pkm_id_2;
             -- check some status condition
             IF pkm_2_status='paralysis' AND RAND()<0.25 THEN
-                CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'));
+                CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'), mygameroom);
             ELSEIF pkm_2_status='freeze' THEN
-                CALL log_to_fight(CONCAT(pkm_2_name, 'is frozen. It can\'t move!'));
+                CALL log_to_fight(CONCAT(pkm_2_name, 'is frozen. It can\'t move!'), mygameroom);
             ELSEIF pkm_2_status='sleep' THEN
-                CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'));
+                CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'), mygameroom);
             ELSE
             -- use move
-                CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, pkm_1_fainted);
+                CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, mygameroom, pkm_1_fainted);
             END IF;
             -- check fainted
             IF pkm_1_fainted=1 AND allfainted(pkm_id_1) THEN
-                CALL log_to_fight(CONCAT(player_2_name,' wins!'));
+                CALL log_to_fight(CONCAT(player_2_name,' wins!'), mygameroom);
                 SET winner=2;
                 LEAVE ot;
             END IF;
@@ -302,18 +307,18 @@ ot: BEGIN
             SELECT * FROM fighting_status WHERE 1=0; -- do nothing
         -- check some status condition
         ELSEIF pkm_2_status='paralysis' AND RAND()<0.25 THEN
-            CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'));
+            CALL log_to_fight(CONCAT(pkm_2_name, 'is paralyzed. It can\'t move!'), mygameroom);
         ELSEIF pkm_2_status='freeze' THEN
-            CALL log_to_fight(CONCAT(pkm_2_name, 'is frozen. It can\'t move!'));
+            CALL log_to_fight(CONCAT(pkm_2_name, 'is frozen. It can\'t move!'), mygameroom);
         ELSEIF pkm_2_status='sleep' THEN
-            CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'));
+            CALL log_to_fight(CONCAT(pkm_2_name, 'is sleeping. It can\'t move!'), mygameroom);
         ELSE
         -- use move
-            CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, pkm_1_fainted);
+            CALL use_move(pkm_id_2, pkm_id_1, move_id_2, pkm_2_name, pkm_1_name, mygameroom, pkm_1_fainted);
         END IF;
         -- check fainted
         IF pkm_1_fainted=1 AND allfainted(pkm_id_1)  THEN
-            CALL log_to_fight(CONCAT(player_2_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_2_name,' wins!'), mygameroom);
             SET winner=2;
             LEAVE ot;
         ELSEIF pkm_1_fainted=0 AND ISNULL(switch_pkm_id_1) THEN
@@ -323,18 +328,18 @@ ot: BEGIN
                 WHERE pkm_id=pkm_id_1;
             -- check some status condition
             IF pkm_1_status='paralysis' AND RAND()<0.25 THEN
-                CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'));
+                CALL log_to_fight(CONCAT(pkm_1_name, 'is paralyzed. It can\'t move!'), mygameroom);
             ELSEIF pkm_1_status='freeze' THEN
-                CALL log_to_fight(CONCAT(pkm_1_name, 'is frozen. It can\'t move!'));
+                CALL log_to_fight(CONCAT(pkm_1_name, 'is frozen. It can\'t move!'), mygameroom);
             ELSEIF pkm_1_status='sleep' THEN
-                CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'));
+                CALL log_to_fight(CONCAT(pkm_1_name, 'is sleeping. It can\'t move!'), mygameroom);
             ELSE
             -- use move
-                CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, pkm_2_fainted);
+                CALL use_move(pkm_id_1, pkm_id_2, move_id_1, pkm_1_name, pkm_2_name, mygameroom, pkm_2_fainted);
             END IF;
             -- check fainted
             IF pkm_2_fainted=1 AND allfainted(pkm_id_2) THEN
-                CALL log_to_fight(CONCAT(player_1_name,' wins!'));
+                CALL log_to_fight(CONCAT(player_1_name,' wins!'), mygameroom);
                 SET winner=1;
                 LEAVE ot;
             END IF;
@@ -343,28 +348,28 @@ ot: BEGIN
 
     -- handle burn poison at random order
     IF RAND()<0.5 THEN
-        IF pkm_1_fainted=0 THEN CALL check_status_case2(pkm_id_1, pkm_1_name, pkm_1_fainted); END IF;
+        IF pkm_1_fainted=0 THEN CALL check_status_case2(pkm_id_1, pkm_1_name, mygameroom, pkm_1_fainted); END IF;
         IF pkm_1_fainted=1 AND allfainted(pkm_id_1) THEN
-            CALL log_to_fight(CONCAT(player_2_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_2_name,' wins!'), mygameroom);
             SET winner=2;
             LEAVE ot;
         END IF;
-        IF pkm_2_fainted=0 THEN CALL check_status_case2(pkm_id_2, pkm_2_name, pkm_2_fainted); END IF;
+        IF pkm_2_fainted=0 THEN CALL check_status_case2(pkm_id_2, pkm_2_name, mygameroom, pkm_2_fainted); END IF;
         IF pkm_2_fainted=1 AND allfainted(pkm_id_2) THEN
-            CALL log_to_fight(CONCAT(player_1_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_1_name,' wins!'), mygameroom);
             SET winner=2;
             LEAVE ot;
         END IF;
     ELSE
-        IF pkm_2_fainted=0 THEN CALL check_status_case2(pkm_id_2, pkm_2_name, pkm_2_fainted); END IF;
+        IF pkm_2_fainted=0 THEN CALL check_status_case2(pkm_id_2, pkm_2_name, mygameroom, pkm_2_fainted); END IF;
         IF pkm_2_fainted=1 AND allfainted(pkm_id_2) THEN
-            CALL log_to_fight(CONCAT(player_1_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_1_name,' wins!'), mygameroom);
             SET winner=2;
             LEAVE ot;
         END IF;
-        IF pkm_1_fainted=0 THEN CALL check_status_case2(pkm_id_1, pkm_1_name, pkm_1_fainted); END IF;
+        IF pkm_1_fainted=0 THEN CALL check_status_case2(pkm_id_1, pkm_1_name, mygameroom, pkm_1_fainted); END IF;
         IF pkm_1_fainted=1 AND allfainted(pkm_id_1) THEN
-            CALL log_to_fight(CONCAT(player_2_name,' wins!'));
+            CALL log_to_fight(CONCAT(player_2_name,' wins!'), mygameroom);
             SET winner=2;
             LEAVE ot;
         END IF;
@@ -374,7 +379,8 @@ END $$
 -- add team info into fighting_status
 CREATE PROCEDURE enter_fight (
     trainer_id_1 INTEGER,
-    trainer_id_2 INTEGER
+    trainer_id_2 INTEGER,
+    mygameroom VARCHAR(100)
 )
 BEGIN
     DECLARE tmp_pkm_id_1 INTEGER;
@@ -388,8 +394,7 @@ BEGIN
     DECLARE first_pkm_name VARCHAR(20);
     DECLARE train_count INTEGER DEFAULT 0;
 
-    DELETE FROM fighting_status;
-    DELETE FROM fight_log;
+    DELETE FROM fighting_status WHERE trainer_id=trainer_id_1 OR trainer_id=trainer_id_2;
 
     WHILE train_count < 2 DO
         SET train_count = train_count + 1;
@@ -403,7 +408,7 @@ BEGIN
             FROM trainer
             WHERE trainer_id=tmp_trainer_id;
 
-        CALL log_to_fight(CONCAT(tmp_trainer_name, ' enter battle!'));
+        CALL log_to_fight(CONCAT(tmp_trainer_name, ' enter battle!'), mygameroom);
 
         SELECT 
             pkm_id_1,
@@ -422,19 +427,19 @@ BEGIN
         FROM team
         WHERE trainer_id=tmp_trainer_id;
 
-        INSERT IGNORE INTO fighting_status (trainer_id, pkm_id, choosen) VALUES
-            (tmp_trainer_id, tmp_pkm_id_1, 1),
-            (tmp_trainer_id, tmp_pkm_id_2, 0),
-            (tmp_trainer_id, tmp_pkm_id_3, 0),
-            (tmp_trainer_id, tmp_pkm_id_4, 0),
-            (tmp_trainer_id, tmp_pkm_id_5, 0),
-            (tmp_trainer_id, tmp_pkm_id_6, 0);
+        INSERT IGNORE INTO fighting_status (trainer_id, pkm_id, choosen, gameroom) VALUES
+            (tmp_trainer_id, tmp_pkm_id_1, 1, mygameroom),
+            (tmp_trainer_id, tmp_pkm_id_2, 0, mygameroom),
+            (tmp_trainer_id, tmp_pkm_id_3, 0, mygameroom),
+            (tmp_trainer_id, tmp_pkm_id_4, 0, mygameroom),
+            (tmp_trainer_id, tmp_pkm_id_5, 0, mygameroom),
+            (tmp_trainer_id, tmp_pkm_id_6, 0, mygameroom);
 
         SELECT pkm_name INTO first_pkm_name
             FROM pokemon NATURAL JOIN pokedex
             WHERE pkm_id=tmp_pkm_id_1;
 
-        CALL log_to_fight(CONCAT(tmp_trainer_name, ' send out ', first_pkm_name));
+        CALL log_to_fight(CONCAT(tmp_trainer_name, ' send out ', first_pkm_name), mygameroom);
         
     END WHILE;
 END $$

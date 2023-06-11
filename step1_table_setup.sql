@@ -232,6 +232,7 @@ CREATE TABLE team (
 -- and deleted when battle ends
 -- totally 12 rows
 CREATE TABLE fighting_status (
+    gameroom   VARCHAR (100),
     trainer_id INTEGER NOT NULL,
     pkm_id     INTEGER NOT NULL UNIQUE,
     -- The first pokemon set to 1
@@ -283,10 +284,24 @@ DELIMITER ;
 -- deleted when battle ends
 -- retrived rows with is_new=1 when one turn ends and set is_new to 0
 CREATE TABLE fight_log (
+    gameroom VARCHAR(100),
     msg_ind INTEGER AUTO_INCREMENT,
     msg VARCHAR(100),
     isnew TINYINT DEFAULT 1,
+    -- pkm info
+    p1_id INTEGER,
+    p2_id INTEGER,
+    p1_pkdex SMALLINT,
+    p2_pkdex SMALLINT,
+    p1_pkm_name VARCHAR(20),
+    p2_pkm_name VARCHAR(20),
+    -- pkm battle status
+    p1_status VARCHAR(20),
+    p2_status VARCHAR(20),
+    p1_hp INTEGER,
+    p2_hp INTEGER,
+    p1_max_hp INTEGER,
+    p2_max_hp INTEGER,
     PRIMARY KEY (msg_ind)
 );
-
 

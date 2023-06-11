@@ -6,11 +6,12 @@ DROP FUNCTION IF EXISTS describe_effect;
 DELIMITER $$
 -- logger function
 CREATE PROCEDURE log_to_fight (
-    val VARCHAR(100)
+    val VARCHAR(100),
+    mygameroom VARCHAR(100)
 )
 BEGIN 
-    INSERT INTO fight_log (msg) VALUES
-        (val);
+    INSERT INTO fight_log (msg, gameroom) VALUES
+        (val, mygameroom);
 END $$
 
 -- effect logger
@@ -58,7 +59,8 @@ END $$
 CREATE procedure deal_effect (
     move_effect VARCHAR(20),
     target_id INTEGER,
-    target_name VARCHAR(50)
+    target_name VARCHAR(50),
+    mygameroom VARCHAR(100)
 )
 BEGIN
     DECLARE target_cur_status VARCHAR(20);
@@ -95,7 +97,7 @@ BEGIN
                 WHERE pkm_id=target_id;
         END IF;
 
-        CALL log_to_fight(CONCAT(target_name, describe_effect(move_effect)));
+        CALL log_to_fight(CONCAT(target_name, describe_effect(move_effect)), mygameroom);
 
     END IF;
     
@@ -113,7 +115,7 @@ BEGIN
             evasion = IF( move_effect LIKE 'evasion%',  LEAST( GREATEST(-6, evasion + inc), 6 ),  evasion)
             WHERE pkm_id=target_id;
 
-        CALL log_to_fight(CONCAT(target_name, describe_effect(move_effect)));
+        CALL log_to_fight(CONCAT(target_name, describe_effect(move_effect)), mygameroom);
     END IF;
 END $$
 
@@ -125,6 +127,7 @@ CREATE procedure use_move (
     IN move_id INTEGER,
     IN atker_name VARCHAR(50),
     IN defer_name VARCHAR(50),
+    IN mygameroom VARCHAR(100),
     OUT fainted TINYINT
 ) NOT DETERMINISTIC
 um: BEGIN
@@ -149,12 +152,12 @@ um: BEGIN
         FROM movepool
         WHERE mv_id=move_id;
 
-    CALL log_to_fight(CONCAT(atker_name, ' use ', cur_mv_name));
+    CALL log_to_fight(CONCAT(atker_name, ' use ', cur_mv_name), mygameroom);
 
     -- Check miss
     SET hit = is_hit(atk_id, def_id, move_id);
     if hit = 0 THEN
-        CALL log_to_fight('But it missed!');
+        CALL log_to_fight('But it missed!', mygameroom);
         LEAVE um;
     END IF;
     
@@ -162,7 +165,7 @@ um: BEGIN
     
     -- if effectiveness is zero, then move fail
     IF effectiveness = 0.0 AND (cur_category!='status' OR move_target=1) THEN
-        CALL log_to_fight('But, it failed!');
+        CALL log_to_fight('But, it failed!', mygameroom);
         LEAVE um;
     END IF;
 
@@ -178,14 +181,14 @@ um: BEGIN
                 WHERE pkm_id=def_id;
 
             -- publish damage
-            CALL log_to_fight('');
+            CALL log_to_fight('', mygameroom);
 
             -- check fainted
             SELECT hp=0 INTO fainted
                 FROM fighting_status
                 WHERE pkm_id=def_id;
             IF fainted=1 THEN
-                CALL log_to_fight(CONCAT(defer_name, ' fainted!'));
+                CALL log_to_fight(CONCAT(defer_name, ' fainted!'), mygameroom);
             END IF;
         END IF;
 
@@ -194,7 +197,7 @@ um: BEGIN
             -- set addition effect's target and deal effect
             SET target_id = IF(move_target=1, def_id, atk_id);
             SET target_name = IF(move_target=1, defer_name, atker_name);
-            CALL deal_effect(move_effect, target_id, target_name);
+            CALL deal_effect(move_effect, target_id, target_name, mygameroom);
         END IF;
 
         IF fainted=1 THEN
@@ -203,13 +206,13 @@ um: BEGIN
     END WHILE;
 
     IF effectiveness < 1.0 AND cur_category!='status' THEN
-        CALL log_to_fight('It\'s not very effective...');
+        CALL log_to_fight('It\'s not very effective...', mygameroom);
     ELSEIF effectiveness > 1.0 AND cur_category!='status' THEN
-        CALL log_to_fight('It\'s super effective!');
+        CALL log_to_fight('It\'s super effective!', mygameroom);
     END IF;
 
     IF move_select_hit_time>1 THEN
-        CALL log_to_fight(CONCAT('HIT ',move_hit_time,' times!'));
+        CALL log_to_fight(CONCAT('HIT ',move_hit_time,' times!'), mygameroom);
     END IF; 
 
 END $$

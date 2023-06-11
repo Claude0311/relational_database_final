@@ -1,16 +1,16 @@
-LOAD DATA LOCAL INFILE 'pokedex_cleanup.csv' INTO TABLE pokedex
+LOAD DATA LOCAL INFILE 'C:\\Users\\jeff5\\Documents\\db\\proposal\\pokedex_cleanup.csv' INTO TABLE pokedex
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE 'movepool_cleanup.csv' INTO TABLE movepool
+LOAD DATA LOCAL INFILE 'C:\\Users\\jeff5\\Documents\\db\\proposal\\movepool_cleanup.csv' INTO TABLE movepool
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE 'natures.csv' INTO TABLE nature_table
+LOAD DATA LOCAL INFILE 'C:\\Users\\jeff5\\Documents\\db\\proposal\\natures.csv' INTO TABLE nature_table
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE 'type_chart.csv' INTO TABLE type_chart
+LOAD DATA LOCAL INFILE 'C:\\Users\\jeff5\\Documents\\db\\proposal\\type_chart.csv' INTO TABLE type_chart
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE 'know.csv' INTO TABLE know
+LOAD DATA LOCAL INFILE 'C:\\Users\\jeff5\\Documents\\db\\proposal\\know.csv' INTO TABLE know
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 
 
